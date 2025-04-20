@@ -33,7 +33,7 @@ class BuildScript {
       ..addOption('platform',
           allowed: ['ios', 'android'], help: 'Target platform')
       ..addFlag('firebase',
-          help: 'Use Firebase App Distribution for Android beta');
+          help: 'Use Firebase App Distribution for Android beta (optional)');
   }
 
   Future<bool> _isFastlaneInitialized() async {
@@ -149,10 +149,9 @@ end
       await _runCommand('flutter pub get', 'Fetching dependencies');
 
       final platform = args['platform'];
-      final isFirebase = args['firebase'] as bool;
 
       if (args['beta']) {
-        await _handleBetaBuild(platform, isFirebase);
+        await _handleBetaBuild(platform, args['firebase'] as bool);
       } else if (args['release']) {
         await _handleReleaseBuild(platform);
       } else {
@@ -165,22 +164,24 @@ end
     }
   }
 
-  Future<void> _handleBetaBuild(String? platform, bool isFirebase) async {
+  Future<void> _handleBetaBuild(String? platform, bool useFirebase) async {
     if (platform == null) {
       print('Please specify --platform (ios or android).');
       exit(1);
     }
 
     if (platform == 'ios') {
-      await _incrementBuildNumber();
+      await _incrementVersionAndBuildNumber();
       await _runCommand('flutter build ipa --release', 'Building iOS IPA');
       await _runCommand('cd ios && fastlane beta', 'Uploading to TestFlight');
     } else if (platform == 'android') {
-      if (isFirebase) {
+      if (useFirebase) {
+        await _incrementVersionAndBuildNumber();
         await _runCommand(
             'flutter build appbundle --release', 'Building Android AppBundle');
         await _uploadToFirebaseAppDistribution();
       } else {
+        await _incrementVersionAndBuildNumber();
         await _runCommand('flutter build apk --release', 'Building Android APK');
       }
     }
@@ -205,24 +206,13 @@ end
     }
   }
 
-  Future<void> _incrementBuildNumber() async {
-    final pubspec = await _readPubspec();
-    final version = pubspec['version'].toString();
-    final parts = version.split('+');
-    final versionNumber = parts[0];
-    final buildNumber = int.parse(parts[1]) + 1;
-
-    await _writePubspec('$versionNumber+$buildNumber');
-    print('Incremented build number to $buildNumber');
-  }
-
   Future<void> _incrementVersionAndBuildNumber() async {
     final pubspec = await _readPubspec();
     final version = pubspec['version'].toString();
     final parts = version.split('+');
     final versionParts = parts[0].split('.');
-    final minor = int.parse(versionParts[1]) + 1;
-    final newVersion = '${versionParts[0]}.$minor.0';
+    final patch = int.parse(versionParts[2]) + 1;
+    final newVersion = '${versionParts[0]}.${versionParts[1]}.$patch';
     final buildNumber = int.parse(parts[1]) + 1;
 
     await _writePubspec('$newVersion+$buildNumber');
