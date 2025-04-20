@@ -19,6 +19,13 @@ class BuildScript {
       exit(1);
     }
 
+    // Validate that exactly one of --beta or --release is provided
+    if (!(args['beta'] as bool) && !(args['release'] as bool)) {
+      print('Error: You must specify either --beta or --release.');
+      print(parser.usage);
+      exit(1);
+    }
+
     if (await _isFastlaneInitialized()) {
       await _executeBuildFlow(args);
     } else {
@@ -28,12 +35,16 @@ class BuildScript {
 
   ArgParser _createArgParser() {
     return ArgParser()
-      ..addFlag('beta', help: 'Run beta build and deployment')
-      ..addFlag('release', help: 'Run release build and deployment')
+      ..addFlag('beta', help: 'Run beta build and deployment', negatable: false)
+      ..addFlag('release',
+          help: 'Run release build and deployment', negatable: false)
       ..addOption('platform',
-          allowed: ['ios', 'android'], help: 'Target platform')
+          allowed: ['ios', 'android'],
+          help: 'Target platform (required)',
+          mandatory: true)
       ..addFlag('firebase',
-          help: 'Use Firebase App Distribution for Android beta (optional)');
+          help: 'Use Firebase App Distribution for Android beta (optional)',
+          negatable: false);
   }
 
   Future<bool> _isFastlaneInitialized() async {
@@ -149,14 +160,12 @@ end
       await _runCommand('flutter pub get', 'Fetching dependencies');
 
       final platform = args['platform'];
+      final useFirebase = args['firebase'] as bool;
 
       if (args['beta']) {
-        await _handleBetaBuild(platform, args['firebase'] as bool);
+        await _handleBetaBuild(platform, useFirebase);
       } else if (args['release']) {
         await _handleReleaseBuild(platform);
-      } else {
-        print('Please specify --beta or --release.');
-        exit(1);
       }
     } catch (e) {
       print('Build flow failed: $e');
@@ -164,12 +173,7 @@ end
     }
   }
 
-  Future<void> _handleBetaBuild(String? platform, bool useFirebase) async {
-    if (platform == null) {
-      print('Please specify --platform (ios or android).');
-      exit(1);
-    }
-
+  Future<void> _handleBetaBuild(String platform, bool useFirebase) async {
     if (platform == 'ios') {
       await _incrementVersionAndBuildNumber();
       await _runCommand('flutter build ipa --release', 'Building iOS IPA');
@@ -187,12 +191,7 @@ end
     }
   }
 
-  Future<void> _handleReleaseBuild(String? platform) async {
-    if (platform == null) {
-      print('Please specify --platform (ios or android).');
-      exit(1);
-    }
-
+  Future<void> _handleReleaseBuild(String platform) async {
     await _incrementVersionAndBuildNumber();
 
     if (platform == 'ios') {
