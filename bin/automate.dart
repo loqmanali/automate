@@ -26,6 +26,14 @@ class BuildScript {
       exit(1);
     }
 
+    // Check if Fastlane is installed
+    try {
+      await shell.run('fastlane --version');
+    } catch (e) {
+      print('Error: Fastlane is not installed or not accessible. Please install Fastlane using `gem install fastlane`.');
+      exit(1);
+    }
+
     if (await _isFastlaneInitialized()) {
       await _executeBuildFlow(args);
     } else {
@@ -67,7 +75,20 @@ class BuildScript {
   Future<void> _initializeIosFastlane() async {
     print('Initializing Fastlane for iOS...');
     try {
-      await _runCommand('cd ios && fastlane init', 'iOS');
+      // Check if ios directory exists
+      final iosDir = Directory('$projectDir/ios');
+      if (!iosDir.existsSync()) {
+        throw Exception('iOS directory not found at $projectDir/ios. Ensure this is a valid Flutter project with an iOS module.');
+      }
+
+      // Run fastlane init with piped input to select manual setup
+      await _runCommand('cd ios && echo -e "4\\n\\n\\n" | fastlane init', 'iOS');
+
+      // Ensure fastlane directory exists
+      final fastlaneDir = Directory('$projectDir/ios/fastlane');
+      if (!fastlaneDir.existsSync()) {
+        await fastlaneDir.create(recursive: true);
+      }
 
       // Read automate_config.yaml
       final configFile = File('$projectDir/automate_config.yaml');
@@ -148,7 +169,14 @@ end
   Future<void> _initializeAndroidFastlane() async {
     print('Initializing Fastlane for Android...');
     try {
-      await _runCommand('cd android && fastlane init', 'Android');
+      // Check if android directory exists
+      final androidDir = Directory('$projectDir/android');
+      if (!androidDir.existsSync()) {
+        throw Exception('Android directory not found at $projectDir/android. Ensure this is a valid Flutter project with an Android module.');
+      }
+
+      // Run fastlane init with piped input to select manual setup
+      await _runCommand('cd android && echo -e "4\\n\\n\\n" | fastlane init', 'Android');
     } catch (e) {
       throw Exception('Failed to initialize Android Fastlane: $e');
     }
