@@ -248,6 +248,7 @@ end
         'cd ios && pod install --repo-update',
         'Installing CocoaPods',
       );
+
       await _runCommand('flutter build ipa --release', 'Building iOS IPA');
       await _runCommand('cd ios && fastlane release', 'Uploading to App Store');
     } else if (platform == 'android') {
