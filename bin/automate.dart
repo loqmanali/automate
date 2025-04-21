@@ -30,7 +30,9 @@ class BuildScript {
     try {
       await shell.run('fastlane --version');
     } catch (e) {
-      print('Error: Fastlane is not installed or not accessible. Please install Fastlane using `gem install fastlane`.');
+      print(
+        'Error: Fastlane is not installed or not accessible. Please install Fastlane using `gem install fastlane`.',
+      );
       exit(1);
     }
 
@@ -44,15 +46,22 @@ class BuildScript {
   ArgParser _createArgParser() {
     return ArgParser()
       ..addFlag('beta', help: 'Run beta build and deployment', negatable: false)
-      ..addFlag('release',
-          help: 'Run release build and deployment', negatable: false)
-      ..addOption('platform',
-          allowed: ['ios', 'android'],
-          help: 'Target platform (required)',
-          mandatory: true)
-      ..addFlag('firebase',
-          help: 'Use Firebase App Distribution for Android beta (optional)',
-          negatable: false);
+      ..addFlag(
+        'release',
+        help: 'Run release build and deployment',
+        negatable: false,
+      )
+      ..addOption(
+        'platform',
+        allowed: ['ios', 'android'],
+        help: 'Target platform (required)',
+        mandatory: true,
+      )
+      ..addFlag(
+        'firebase',
+        help: 'Use Firebase App Distribution for Android beta (optional)',
+        negatable: false,
+      );
   }
 
   Future<bool> _isFastlaneInitialized() async {
@@ -78,13 +87,18 @@ class BuildScript {
       // Check if ios directory exists
       final iosDir = Directory('$projectDir/ios');
       if (!iosDir.existsSync()) {
-        throw Exception('iOS directory not found at $projectDir/ios. Ensure this is a valid Flutter project with an iOS module.');
+        throw Exception(
+          'iOS directory not found at $projectDir/ios. Ensure this is a valid Flutter project with an iOS module.',
+        );
       }
 
       // Run fastlane init with piped input to select manual setup
-      await _runCommand('cd ios && echo "4\\n\\n\\n\\n" | fastlane init', 'iOS');
-
-   /*   // Ensure fastlane directory exists
+      await _runCommand(
+        'cd ios && echo "4\\n\\n\\n\\n" | fastlane init',
+        'iOS',
+      );
+      await Future.delayed(const Duration(seconds: 2));
+      /*   // Ensure fastlane directory exists
       final fastlaneDir = Directory('$projectDir/ios/fastlane');
       if (!fastlaneDir.existsSync()) {
         await fastlaneDir.create(recursive: true);
@@ -101,14 +115,17 @@ class BuildScript {
       // Extract App Store Connect API key values
       final iosConfig = config['ios']?['app_store_connect'] as YamlMap?;
       if (iosConfig == null) {
-        throw Exception('Missing ios.app_store_connect in automate_config.yaml');
+        throw Exception(
+          'Missing ios.app_store_connect in automate_config.yaml',
+        );
       }
       final keyId = iosConfig['key_id']?.toString();
       final issuerId = iosConfig['issuer_id']?.toString();
       final keyFilepath = iosConfig['key_filepath']?.toString();
       if (keyId == null || issuerId == null || keyFilepath == null) {
         throw Exception(
-            'Missing key_id, issuer_id, or key_filepath in automate_config.yaml');
+          'Missing key_id, issuer_id, or key_filepath in automate_config.yaml',
+        );
       }
 
       // Define Fastlane configuration for iOS
@@ -172,11 +189,16 @@ end
       // Check if android directory exists
       final androidDir = Directory('$projectDir/android');
       if (!androidDir.existsSync()) {
-        throw Exception('Android directory not found at $projectDir/android. Ensure this is a valid Flutter project with an Android module.');
+        throw Exception(
+          'Android directory not found at $projectDir/android. Ensure this is a valid Flutter project with an Android module.',
+        );
       }
 
       // Run fastlane init with piped input to select manual setup
-      await _runCommand('cd android && echo -e "4\\n\\n\\n" | fastlane init', 'Android');
+      await _runCommand(
+        'cd android && echo -e "4\\n\\n\\n" | fastlane init',
+        'Android',
+      );
     } catch (e) {
       throw Exception('Failed to initialize Android Fastlane: $e');
     }
@@ -210,11 +232,16 @@ end
       if (useFirebase) {
         await _incrementVersionAndBuildNumber();
         await _runCommand(
-            'flutter build appbundle --release', 'Building Android AppBundle');
+          'flutter build appbundle --release',
+          'Building Android AppBundle',
+        );
         await _uploadToFirebaseAppDistribution();
       } else {
         await _incrementVersionAndBuildNumber();
-        await _runCommand('flutter build apk --release', 'Building Android APK');
+        await _runCommand(
+          'flutter build apk --release',
+          'Building Android APK',
+        );
       }
     }
   }
@@ -227,9 +254,13 @@ end
       await _runCommand('cd ios && fastlane release', 'Uploading to App Store');
     } else if (platform == 'android') {
       await _runCommand(
-          'flutter build appbundle --release', 'Building Android AppBundle');
+        'flutter build appbundle --release',
+        'Building Android AppBundle',
+      );
       await _runCommand(
-          'cd android && fastlane release', 'Uploading to Play Store');
+        'cd android && fastlane release',
+        'Uploading to Play Store',
+      );
     }
   }
 
@@ -257,8 +288,10 @@ end
   Future<void> _writePubspec(String newVersion) async {
     final file = File('$projectDir/pubspec.yaml');
     final content = await file.readAsString();
-    final updatedContent =
-    content.replaceFirst(RegExp(r'version: .+'), 'version: $newVersion');
+    final updatedContent = content.replaceFirst(
+      RegExp(r'version: .+'),
+      'version: $newVersion',
+    );
     await file.writeAsString(updatedContent);
   }
 
@@ -278,7 +311,8 @@ end
     final appId = androidConfig['app_id']?.toString();
     if (firebaseToken == null || appId == null) {
       throw Exception(
-          'Missing token or app_id in android.firebase in automate_config.yaml');
+        'Missing token or app_id in android.firebase in automate_config.yaml',
+      );
     }
 
     final command =
