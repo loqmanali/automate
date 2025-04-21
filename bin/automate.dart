@@ -84,11 +84,11 @@ class BuildScript {
       // Run fastlane init with piped input to select manual setup
       await _runCommand('cd ios && echo "4\\n\\n\\n\\n" | fastlane init', 'iOS');
 
-      // Ensure fastlane directory exists
+   /*   // Ensure fastlane directory exists
       final fastlaneDir = Directory('$projectDir/ios/fastlane');
       if (!fastlaneDir.existsSync()) {
         await fastlaneDir.create(recursive: true);
-      }
+      }*/
 
       // Read automate_config.yaml
       final configFile = File('$projectDir/automate_config.yaml');
