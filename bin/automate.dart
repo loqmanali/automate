@@ -102,7 +102,7 @@ class BuildScript {
         await Process.run('bash', [
           '-c',
           'cd ios && echo "4\\n\\n\\n\\n" | fastlane init',
-        ]);
+        ], runInShell: true);
       } on Exception catch (e) {
         print(e);
       }
