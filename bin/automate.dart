@@ -82,7 +82,7 @@ class BuildScript {
       }
 
       // Run fastlane init with piped input to select manual setup
-      await _runCommand('cd ios && echo -e "4\\n\\n\\n" | fastlane init', 'iOS');
+      await _runCommand('cd ios && echo "4\\n\\n\\n\\n" | fastlane init', 'iOS');
 
       // Ensure fastlane directory exists
       final fastlaneDir = Directory('$projectDir/ios/fastlane');
