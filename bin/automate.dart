@@ -94,7 +94,7 @@ class BuildScript {
 
       // Run fastlane init with piped input to select manual setup
       await _runCommand(
-        'bash -c "cd ios && echo -e \'4\\n\\n\\n\\n\' | fastlane init"',
+        'bash -c "cd ios && echo "4\\n\\n\\n\\n" | fastlane init"',
         'iOS',
       );
       /*   // Ensure fastlane directory exists
