@@ -219,7 +219,7 @@ end
   Future<void> _handleBetaBuild(String platform, bool useFirebase) async {
     if (platform == 'ios') {
       await _runCommand(
-        'cd ios && pod install --repo-update',
+        'cd ios && pod install --repo-update && pod update',
         'Installing CocoaPods',
       );
       await _incrementVersionAndBuildNumber();
@@ -248,7 +248,7 @@ end
 
     if (platform == 'ios') {
       await _runCommand(
-        'cd ios && pod install --repo-update',
+        'cd ios && pod install --repo-update && pod update',
         'Installing CocoaPods',
       );
       await _runCommand('flutter build ipa --release', 'Building iOS IPA');
