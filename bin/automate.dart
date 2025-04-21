@@ -93,10 +93,15 @@ class BuildScript {
       }
 
       // Run fastlane init with piped input to select manual setup
-      await _runCommand(
+      /*  await _runCommand(
         'bash -c "cd ios && echo "4\\n\\n\\n\\n" | fastlane init"',
         'iOS',
-      );
+      );*/
+
+      await Process.run('bash', [
+        '-c',
+        'cd ios && echo "4\\n\\n\\n\\n" | fastlane init',
+      ]);
       /*   // Ensure fastlane directory exists
       final fastlaneDir = Directory('$projectDir/ios/fastlane');
       if (!fastlaneDir.existsSync()) {
