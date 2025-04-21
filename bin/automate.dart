@@ -218,6 +218,7 @@ end
 
   Future<void> _handleBetaBuild(String platform, bool useFirebase) async {
     if (platform == 'ios') {
+      await _runCommand('cd ios && pod repo update', 'Updating CocoaPods repo');
       await _runCommand(
         'cd ios && pod install --repo-update',
         'Installing CocoaPods',
@@ -247,6 +248,8 @@ end
     await _incrementVersionAndBuildNumber();
 
     if (platform == 'ios') {
+      await _runCommand('cd ios && pod repo update', 'Updating CocoaPods repo');
+
       await _runCommand(
         'cd ios && pod install --repo-update',
         'Installing CocoaPods',
