@@ -98,10 +98,14 @@ class BuildScript {
         'iOS',
       );*/
 
-      await Process.run('bash', [
-        '-c',
-        'cd ios && echo "4\\n\\n\\n\\n" | fastlane init',
-      ]);
+      try {
+        await Process.run('bash', [
+          '-c',
+          'cd ios && echo "4\\n\\n\\n\\n" | fastlane init',
+        ]);
+      } on Exception catch (e) {
+        print(e);
+      }
       /*   // Ensure fastlane directory exists
       final fastlaneDir = Directory('$projectDir/ios/fastlane');
       if (!fastlaneDir.existsSync()) {
