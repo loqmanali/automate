@@ -36,11 +36,10 @@ class BuildScript {
       exit(1);
     }
 
-    if (await _isFastlaneInitialized()) {
-      await _executeBuildFlow(args);
-    } else {
+    if (!await _isFastlaneInitialized()) {
       await _initializeFastlane();
     }
+    await _executeBuildFlow(args);
   }
 
   ArgParser _createArgParser() {
@@ -92,25 +91,11 @@ class BuildScript {
         );
       }
 
-      // Run fastlane init with piped input to select manual setup
-      /*  await _runCommand(
-        'bash -c "cd ios && echo "4\\n\\n\\n\\n" | fastlane init"',
-        'iOS',
-      );*/
-
-      try {
-        await Process.run('bash', [
-          '-c',
-          'cd ios && echo "4\\n\\n\\n\\n" | fastlane init',
-        ], runInShell: true);
-      } on Exception catch (e) {
-        print(e);
-      }
-      /*   // Ensure fastlane directory exists
+      // Ensure fastlane directory exists
       final fastlaneDir = Directory('$projectDir/ios/fastlane');
       if (!fastlaneDir.existsSync()) {
         await fastlaneDir.create(recursive: true);
-      }*/
+      }
 
       // Read automate_config.yaml
       final configFile = File('$projectDir/automate_config.yaml');
