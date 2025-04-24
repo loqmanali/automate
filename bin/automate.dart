@@ -97,7 +97,6 @@ class BuildScript {
       final process = await Process.start(
         'fastlane',
         ['init'],
-        mode: ProcessStartMode.detachedWithStdio,
         runInShell: true, // Ensures it works on Windows/macOS/Linux
       );
 
