@@ -39,7 +39,7 @@ class BuildScript {
     if (!await _isFastlaneInitialized()) {
       await _initializeFastlane();
     }
-    await _executeBuildFlow(args);
+    //await _executeBuildFlow(args);
   }
 
   ArgParser _createArgParser() {
