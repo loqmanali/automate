@@ -192,8 +192,9 @@ gem 'fastlane'
       // Execute bundle install to generate Gemfile.lock
       await _runCommand(
         'bundle',
-        arguments: ['install', '--path', 'vendor/bundle'],
+        arguments: ['install', '--gemfile=$projectDir/ios/Gemfile'],
         description: 'Generating Gemfile.lock',
+        workingDir: 'ios',
       );
       print('IOS Fastlane initialized successfully.');
     } catch (e) {
@@ -405,7 +406,8 @@ gem 'fastlane'
       }
       print('Output: ${result.stdout}');
     } catch (e) {
-      throw Exception('Failed to run $description: $e');
+      print('Error running command: $e');
+      exit(1);
     }
   }
 }
