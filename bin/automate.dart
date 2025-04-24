@@ -38,12 +38,10 @@ class BuildScript {
       exit(1);
     }
 
-    _initializeIosFastlane();
-    /*
     if (!await _isFastlaneInitialized()) {
       await _initializeFastlane();
     }
-    await _executeBuildFlow(args);*/
+    await _executeBuildFlow(args);
   }
 
   ArgParser _createArgParser() {
@@ -182,7 +180,7 @@ end
         await gemfile.create(recursive: true);
       }
 
-      // Write on Gemfile
+/*      // Write on Gemfile
       const gemfileContent = '''
 source 'https://rubygems.org'
 gem 'fastlane'
@@ -196,7 +194,7 @@ gem 'fastlane'
         description: 'Generating Gemfile.lock',
         workingDir: 'ios',
       );
-      print('IOS Fastlane initialized successfully.');
+      print('IOS Fastlane initialized successfully.');*/
     } catch (e) {
       throw Exception('Failed to initialize iOS Fastlane: $e');
     }
