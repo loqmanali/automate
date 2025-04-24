@@ -1,17 +1,89 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:args/args.dart';
-import 'package:process_run/shell.dart';
 import 'package:yaml/yaml.dart';
 
 class BuildScript {
-  final Shell shell = Shell();
   final String projectDir = Directory.current.path;
 
   Future<void> run(List<String> arguments) async {
-    await shell.run(
-      "cd ios && mkdir fastlane && cd .. && cd android && mkdir fastlane && cd ..",
-    );
-    print('Initialized Fastlane Directories...');
+    // Configuration for fastlane init inputs
+    const setupType =
+        '4'; // Manual setup (adjust to 1, 2, or 3 for other options)
+
+    try {
+      print('Starting fastlane init...');
+
+      // Start the fastlane init process
+      final process = await Process.start('fastlane', [
+        'init',
+      ], workingDirectory: '$projectDir/ios');
+
+      // Write predefined inputs to stdin
+      process.stdin.writeln(
+        setupType,
+      ); // Select setup type (4 for manual setup)
+      process.stdin.writeln(''); // Press Enter after generating configuration
+      process.stdin.writeln(''); // Press Enter after explaining lanes
+      process.stdin.writeln(
+        '',
+      ); // Press Enter after explaining Fastfile customization
+
+      // Close stdin to signal no more input
+      await process.stdin.flush();
+      await process.stdin.close();
+
+      // Capture and print stdout for debugging
+      process.stdout
+          .transform(utf8.decoder)
+          .listen(
+            (data) => print('STDOUT: $data'),
+            onError: (error) => print('STDOUT ERROR: $error'),
+          );
+
+      // Capture and print stderr for debugging
+      process.stderr
+          .transform(utf8.decoder)
+          .listen(
+            (data) => print('STDERR: $data'),
+            onError: (error) => print('STDERR ERROR: $error'),
+          );
+
+      // Wait for the process to complete and check exit code
+      final exitCode = await process.exitCode;
+      if (exitCode == 0) {
+        print('fastlane init completed successfully');
+        // Verify expected files were created
+        final expectedFiles = [
+          'fastlane/Fastfile',
+          'fastlane/Appfile',
+          'Gemfile',
+          'Gemfile.lock',
+        ];
+        for (final file in expectedFiles) {
+          final filePath = '$workingDirectory/$file';
+          if (await File(filePath).exists()) {
+            print('$file created successfully');
+          } else {
+            print('Error: $file was not created');
+            exit(1);
+          }
+        }
+      } else {
+        print('fastlane init failed with exit code $exitCode');
+        exit(1);
+      }
+    } catch (e) {
+      print('An error occurred: $e');
+      print('Ensure fastlane, Ruby, and Bundler are installed and accessible.');
+      exit(1);
+    }
+
+    /*
+    if (!await _isFastlaneInitialized()) {
+      await _initializeFastlane();
+    }
+    await _executeBuildFlow(args);*/
   }
 
   ArgParser _createArgParser() {
@@ -159,8 +231,9 @@ gem 'fastlane'
 
       // Execute bundle install to generate Gemfile.lock
       await _runCommand(
-        'cd ios && bundle install --path vendor/bundle',
-        'Generating Gemfile.lock',
+        'bundle',
+        arguments: ['install', '--path', 'vendor/bundle'],
+        description: 'Generating Gemfile.lock',
       );
       print('IOS Fastlane initialized successfully.');
     } catch (e) {
@@ -180,10 +253,10 @@ gem 'fastlane'
       }
 
       // Run fastlane init with piped input to select manual setup
-      await _runCommand(
+      /*  await _runCommand(
         'cd android && echo -e "4\\n\\n\\n" | fastlane init',
         'Android',
-      );
+      );*/
     } catch (e) {
       throw Exception('Failed to initialize Android Fastlane: $e');
     }
@@ -191,8 +264,16 @@ gem 'fastlane'
 
   Future<void> _executeBuildFlow(ArgResults args) async {
     try {
-      await _runCommand('flutter clean', 'Cleaning project');
-      await _runCommand('flutter pub get', 'Fetching dependencies');
+      await _runCommand(
+        'flutter',
+        arguments: ['clean'],
+        description: 'Cleaning project',
+      );
+      await _runCommand(
+        'flutter',
+        arguments: ['pub', 'get'],
+        description: 'Fetching dependencies',
+      );
 
       final platform = args['platform'];
       final useFirebase = args['firebase'] as bool;
@@ -211,25 +292,37 @@ gem 'fastlane'
   Future<void> _handleBetaBuild(String platform, bool useFirebase) async {
     if (platform == 'ios') {
       await _runCommand(
-        'cd ios && pod install --repo-update && pod update',
-        'Installing CocoaPods',
+        'pod install --repo-update',
+        description: 'Installing CocoaPods',
+        workingDir: 'ios',
       );
       await _incrementVersionAndBuildNumber();
-      await _runCommand('flutter build ipa --release', 'Building iOS IPA');
-      await _runCommand('cd ios && fastlane beta', 'Uploading to TestFlight');
+      await _runCommand(
+        'flutter',
+        arguments: ['build', "ipa", "--release"],
+        description: 'Building iOS IPA',
+      );
+      await _runCommand(
+        'fastlane',
+        arguments: ['beta'],
+        description: 'Uploading to TestFlight',
+        workingDir: 'ios',
+      );
     } else if (platform == 'android') {
       if (useFirebase) {
         await _incrementVersionAndBuildNumber();
         await _runCommand(
-          'flutter build appbundle --release',
-          'Building Android AppBundle',
+          'flutter',
+          arguments: ['build', "appbundle", "--release"],
+          description: 'Building Android AppBundle',
         );
         await _uploadToFirebaseAppDistribution();
       } else {
         await _incrementVersionAndBuildNumber();
         await _runCommand(
-          'flutter build apk --release',
-          'Building Android APK',
+          'flutter',
+          arguments: ['build', "apk", "--release"],
+          description: 'Building Android APK',
         );
       }
     }
@@ -240,19 +333,33 @@ gem 'fastlane'
 
     if (platform == 'ios') {
       await _runCommand(
-        'cd ios && pod install --repo-update && pod update',
-        'Installing CocoaPods',
+        'pod',
+        arguments: ['install', '--repo-update'],
+        description: 'Installing CocoaPods',
+        workingDir: 'ios',
       );
-      await _runCommand('flutter build ipa --release', 'Building iOS IPA');
-      await _runCommand('cd ios && fastlane release', 'Uploading to App Store');
+      await _runCommand(
+        'flutter',
+        arguments: ['build', 'ipa', '--release'],
+        description: 'Building iOS IPA',
+      );
+      await _runCommand(
+        'fastlane',
+        arguments: ['release'],
+        description: 'Uploading to App Store',
+        workingDir: 'ios',
+      );
     } else if (platform == 'android') {
       await _runCommand(
-        'flutter build appbundle --release',
-        'Building Android AppBundle',
+        'flutter',
+        arguments: ['build', 'appbundle', '--release'],
+        description: 'Building Android AppBundle',
       );
       await _runCommand(
-        'cd android && fastlane release',
-        'Uploading to Play Store',
+        'fastlane',
+        arguments: ['release'],
+        description: 'Uploading to Play Store',
+        workingDir: 'android',
       );
     }
   }
@@ -311,13 +418,32 @@ gem 'fastlane'
     final command =
         'firebase appdistribution:distribute build/app/outputs/bundle/release/app-release.aab '
         '--app $appId --token $firebaseToken';
-    await _runCommand(command, 'Uploading to Firebase App Distribution');
+    await _runCommand(
+      command,
+      description: 'Uploading to Firebase App Distribution',
+    );
   }
 
-  Future<void> _runCommand(String command, String description) async {
+  Future<void> _runCommand(
+    String executable, {
+
+    List<String> arguments = const [],
+    String? description,
+    String? workingDir,
+  }) async {
     print('Running: $description...');
     try {
-      await shell.run(command);
+      final result = await Process.run(
+        executable,
+        arguments,
+        workingDirectory:
+            workingDir != null ? '$projectDir/$workingDir' : projectDir,
+      );
+      if (result.exitCode != 0) {
+        print('Error Output: ${result.stderr}');
+        throw Exception('Command failed with exit code ${result.exitCode}');
+      }
+      print('Output: ${result.stdout}');
     } catch (e) {
       throw Exception('Failed to run $description: $e');
     }
