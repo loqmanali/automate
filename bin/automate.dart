@@ -156,6 +156,7 @@ platform :ios do
       ipa: "../build/ios/ipa/Banic.ipa",
       distribute_external: false,
       notify_external_testers: false,
+      beta_app_description: "",
       expire_previous_builds: true,
       groups: "Testers",
     )
