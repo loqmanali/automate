@@ -92,10 +92,8 @@ class BuildScript {
       }
 
       await Process.run(
-        'fastlane',
-        ['init'],
-        runInShell: true,
-        workingDirectory: iosDir.path,
+        'bash',
+        ['-c', 'echo -e "4\\n\\n\\n\\n" | fastlane init'],
       );
 
       /*
