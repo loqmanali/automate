@@ -37,7 +37,7 @@ class BuildScript {
     }
 
     _initializeIosFastlane();
-/*
+    /*
     if (!await _isFastlaneInitialized()) {
       await _initializeFastlane();
     }
@@ -188,7 +188,10 @@ gem 'fastlane'
       await gemfile.writeAsString(gemfileContent);
 
       // Execute bundle install to generate Gemfile.lock
-      await _runCommand('cd ios && bundle install --path vendor/bundle', 'Installing dependencies');
+      await _runCommand(
+        'cd ios && bundle install --path vendor/bundle',
+        'Generating Gemfile.lock',
+      );
       print('IOS Fastlane initialized successfully.');
     } catch (e) {
       throw Exception('Failed to initialize iOS Fastlane: $e');
