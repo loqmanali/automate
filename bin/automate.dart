@@ -91,11 +91,20 @@ class BuildScript {
         );
       }
 
+      await Process.run(
+        'fastlane',
+        ['init'],
+        runInShell: true,
+        workingDirectory: iosDir.path,
+      );
+
+      /*
       // Ensure fastlane directory exists
       final fastlaneDir = Directory('$projectDir/ios/fastlane');
       if (!fastlaneDir.existsSync()) {
         await fastlaneDir.create(recursive: true);
       }
+*/
 
       // Read automate_config.yaml
       final configFile = File('$projectDir/automate_config.yaml');
