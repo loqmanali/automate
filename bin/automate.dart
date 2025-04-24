@@ -180,21 +180,21 @@ end
         await gemfile.create(recursive: true);
       }
 
-/*      // Write on Gemfile
+      // Write on Gemfile
       const gemfileContent = '''
 source 'https://rubygems.org'
 gem 'fastlane'
 ''';
       await gemfile.writeAsString(gemfileContent);
-
+      /*
       // Execute bundle install to generate Gemfile.lock
       await _runCommand(
         'bundle',
         arguments: ['install' ,"--path", "vendor/bundle"],
         description: 'Generating Gemfile.lock',
         workingDir: 'ios',
-      );
-      print('IOS Fastlane initialized successfully.');*/
+      );*/
+      print('IOS Fastlane initialized successfully.');
     } catch (e) {
       throw Exception('Failed to initialize iOS Fastlane: $e');
     }
@@ -251,7 +251,8 @@ gem 'fastlane'
   Future<void> _handleBetaBuild(String platform, bool useFirebase) async {
     if (platform == 'ios') {
       await _runCommand(
-        'pod install --repo-update',
+        'pod',
+        arguments: ['install', '--repo-update'],
         description: 'Installing CocoaPods',
         workingDir: 'ios',
       );
