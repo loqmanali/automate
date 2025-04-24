@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:io';
 import 'package:args/args.dart';
 import 'package:yaml/yaml.dart';
@@ -7,66 +6,39 @@ class BuildScript {
   final String projectDir = Directory.current.path;
 
   Future<void> run(List<String> arguments) async {
-    // Define the working directory
+    final parser = _createArgParser();
+    final ArgResults args;
 
     try {
-      print('Starting fastlane init...');
-      print('Please follow the prompts in the terminal to complete the fastlane setup.');
-
-      // Check if fastlane is installed
-      final fastlaneCheck = await Process.run('which', ['fastlane']);
-      if (fastlaneCheck.exitCode != 0) {
-        print('Error: fastlane is not installed. Install it with `gem install fastlane` or `brew install fastlane`.');
-        exit(1);
-      }
-
-      // Run fastlane init in the terminal, allowing full user interaction
-      final result = await Process.run(
-        'fastlane',
-        ['init'],
-        workingDirectory: "$projectDir/ios",
-        environment: {'TERM': 'xterm'}, // Ensure terminal environment is set
-      );
-
-      // Print fastlane output for transparency
-      if (result.stdout.isNotEmpty) {
-        print(result.stdout);
-      }
-      if (result.stderr.isNotEmpty) {
-        print('STDERR: ${result.stderr}');
-      }
-
-      // Check if fastlane init was successful
-      if (result.exitCode == 0) {
-        print('fastlane init completed successfully');
-        // Verify expected files were created
-        final expectedFiles = [
-          'fastlane/Fastfile',
-          'fastlane/Appfile',
-          'Gemfile',
-          'Gemfile.lock',
-        ];
-        for (final file in expectedFiles) {
-          final filePath = '$projectDir/$file';
-          if (await File(filePath).exists()) {
-            print('$file created successfully');
-          } else {
-            print('Error: $file was not created');
-            exit(1);
-          }
-        }
-        print('Next steps: Edit /fastlane/Fastfile to customize your lanes and run `bundle exec fastlane custom_lane` in ');
-      } else {
-        print('fastlane init failed with exit code ${result.exitCode}');
-        print('Please run `fastlane init` manually in  to diagnose the issue.');
-        exit(1);
-      }
+      args = parser.parse(arguments);
     } catch (e) {
-      print('An error occurred: $e');
-      print('Ensure fastlane, Ruby, and Bundler are installed and the  directory is accessible.');
+      print('Error parsing arguments: $e');
+      print(parser.usage);
       exit(1);
     }
 
+    // Validate that exactly one of --beta or --release is provided
+    if (!(args['beta'] as bool) && !(args['release'] as bool)) {
+      print('Error: You must specify either --beta or --release.');
+      print(parser.usage);
+      exit(1);
+    }
+
+    // Check if Fastlane is installed
+    try {
+      await _runCommand(
+        "fastlane",
+        arguments: ["--version"],
+        description: "Fastlane version",
+      );
+    } catch (e) {
+      print(
+        'Error: Fastlane is not installed or not accessible. Please install Fastlane using `gem install fastlane`.',
+      );
+      exit(1);
+    }
+
+    _initializeIosFastlane();
     /*
     if (!await _isFastlaneInitialized()) {
       await _initializeFastlane();
