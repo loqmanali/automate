@@ -61,7 +61,7 @@ class BuildScript {
           'Gemfile.lock',
         ];
         for (final file in expectedFiles) {
-          final filePath = '$workingDirectory/$file';
+          final filePath = '$projectDir/$file';
           if (await File(filePath).exists()) {
             print('$file created successfully');
           } else {
