@@ -97,7 +97,8 @@ class BuildScript {
       final process = await Process.start(
         'fastlane',
         ['init'],
-        runInShell: true, // Ensures it works on Windows/macOS/Linux
+        runInShell: true, // Ensures it works on Windows/macOS/Linux\
+        workingDirectory: '$projectDir/ios',
       );
 
       // Simulate input: 4 + Enter x4 (just like echo -e "4\n\n\n\n")
