@@ -8,40 +8,10 @@ class BuildScript {
   final String projectDir = Directory.current.path;
 
   Future<void> run(List<String> arguments) async {
-    final parser = _createArgParser();
-    final ArgResults args;
-
-    try {
-      args = parser.parse(arguments);
-    } catch (e) {
-      print('Error parsing arguments: $e');
-      print(parser.usage);
-      exit(1);
-    }
-
-    // Validate that exactly one of --beta or --release is provided
-    if (!(args['beta'] as bool) && !(args['release'] as bool)) {
-      print('Error: You must specify either --beta or --release.');
-      print(parser.usage);
-      exit(1);
-    }
-
-    // Check if Fastlane is installed
-    try {
-      await shell.run('fastlane --version');
-    } catch (e) {
-      print(
-        'Error: Fastlane is not installed or not accessible. Please install Fastlane using `gem install fastlane`.',
-      );
-      exit(1);
-    }
-
-    _initializeIosFastlane();
-    /*
-    if (!await _isFastlaneInitialized()) {
-      await _initializeFastlane();
-    }
-    await _executeBuildFlow(args);*/
+    await shell.run(
+      "cd ios && mkdir fastlane && cd .. && cd android && mkdir fastlane && cd ..",
+    );
+    print('Initialized Fastlane Directories...');
   }
 
   ArgParser _createArgParser() {
