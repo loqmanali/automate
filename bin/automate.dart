@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:args/args.dart';
 import 'package:process_run/shell.dart';
@@ -91,10 +92,35 @@ class BuildScript {
         );
       }
 
-      await Process.run(
-        'bash',
-        ['-c', 'echo -e "4\\n\\n\\n\\n" | fastlane init'],
+      final process = await Process.start(
+        'fastlane',
+        ['init'],
+        mode: ProcessStartMode.detachedWithStdio,
+        runInShell: true, // Ensures it works on Windows/macOS/Linux
       );
+
+      // Simulate input: 4 + Enter x4 (just like echo -e "4\n\n\n\n")
+      process.stdin.writeln('4');
+      process.stdin.writeln('');
+      process.stdin.writeln('');
+      process.stdin.writeln('');
+      process.stdin.writeln('');
+
+      // Optionally close stdin if fastlane expects no further input
+      await process.stdin.flush();
+      await process.stdin.close();
+
+      // Capture stdout and stderr
+      process.stdout.transform(utf8.decoder).listen((data) {
+        stdout.write(data);
+      });
+
+      process.stderr.transform(utf8.decoder).listen((data) {
+        stderr.write(data);
+      });
+
+      final exitCode = await process.exitCode;
+      print('Process exited with code $exitCode');
 
       /*
       // Ensure fastlane directory exists
