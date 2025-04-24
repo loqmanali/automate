@@ -37,9 +37,11 @@ class BuildScript {
       exit(1);
     }
 
-    if (!await _isFastlaneInitialized()) {
-      await _initializeFastlane();
-    }
+    await _initializeIosFastlane();
+
+    // if (!await _isFastlaneInitialized()) {
+    //   await _initializeFastlane();
+    // }
     //await _executeBuildFlow(args);
   }
 
@@ -129,7 +131,7 @@ class BuildScript {
         await fastlaneDir.create(recursive: true);
       }
 */
-
+/*
       // Read automate_config.yaml
       final configFile = File('$projectDir/automate_config.yaml');
       if (!configFile.existsSync()) {
@@ -203,7 +205,7 @@ end
       // Write Fastfile for iOS
       final fastfile = File('$projectDir/ios/fastlane/Fastfile');
       await fastfile.writeAsString(fastlaneContent);
-      print('iOS Fastfile overwritten successfully');
+      print('iOS Fastfile overwritten successfully');*/
     } catch (e) {
       throw Exception('Failed to initialize iOS Fastlane: $e');
     }
