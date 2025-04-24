@@ -7,51 +7,37 @@ class BuildScript {
   final String projectDir = Directory.current.path;
 
   Future<void> run(List<String> arguments) async {
-    // Configuration for fastlane init inputs
-    const setupType =
-        '4'; // Manual setup (adjust to 1, 2, or 3 for other options)
+    // Define the working directory
 
     try {
       print('Starting fastlane init...');
+      print('Please follow the prompts in the terminal to complete the fastlane setup.');
 
-      // Start the fastlane init process
-      final process = await Process.start('fastlane', [
-        'init',
-      ], workingDirectory: '$projectDir/ios');
+      // Check if fastlane is installed
+      final fastlaneCheck = await Process.run('which', ['fastlane']);
+      if (fastlaneCheck.exitCode != 0) {
+        print('Error: fastlane is not installed. Install it with `gem install fastlane` or `brew install fastlane`.');
+        exit(1);
+      }
 
-      // Write predefined inputs to stdin
-      process.stdin.writeln(
-        setupType,
-      ); // Select setup type (4 for manual setup)
-      process.stdin.writeln(''); // Press Enter after generating configuration
-      process.stdin.writeln(''); // Press Enter after explaining lanes
-      process.stdin.writeln(
-        '',
-      ); // Press Enter after explaining Fastfile customization
+      // Run fastlane init in the terminal, allowing full user interaction
+      final result = await Process.run(
+        'fastlane',
+        ['init'],
+        workingDirectory: "$projectDir/ios",
+        environment: {'TERM': 'xterm'}, // Ensure terminal environment is set
+      );
 
-      // Close stdin to signal no more input
-      await process.stdin.flush();
-      await process.stdin.close();
+      // Print fastlane output for transparency
+      if (result.stdout.isNotEmpty) {
+        print(result.stdout);
+      }
+      if (result.stderr.isNotEmpty) {
+        print('STDERR: ${result.stderr}');
+      }
 
-      // Capture and print stdout for debugging
-      process.stdout
-          .transform(utf8.decoder)
-          .listen(
-            (data) => print('STDOUT: $data'),
-            onError: (error) => print('STDOUT ERROR: $error'),
-          );
-
-      // Capture and print stderr for debugging
-      process.stderr
-          .transform(utf8.decoder)
-          .listen(
-            (data) => print('STDERR: $data'),
-            onError: (error) => print('STDERR ERROR: $error'),
-          );
-
-      // Wait for the process to complete and check exit code
-      final exitCode = await process.exitCode;
-      if (exitCode == 0) {
+      // Check if fastlane init was successful
+      if (result.exitCode == 0) {
         print('fastlane init completed successfully');
         // Verify expected files were created
         final expectedFiles = [
@@ -69,13 +55,15 @@ class BuildScript {
             exit(1);
           }
         }
+        print('Next steps: Edit /fastlane/Fastfile to customize your lanes and run `bundle exec fastlane custom_lane` in ');
       } else {
-        print('fastlane init failed with exit code $exitCode');
+        print('fastlane init failed with exit code ${result.exitCode}');
+        print('Please run `fastlane init` manually in  to diagnose the issue.');
         exit(1);
       }
     } catch (e) {
       print('An error occurred: $e');
-      print('Ensure fastlane, Ruby, and Bundler are installed and accessible.');
+      print('Ensure fastlane, Ruby, and Bundler are installed and the  directory is accessible.');
       exit(1);
     }
 
