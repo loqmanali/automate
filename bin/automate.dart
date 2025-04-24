@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:io';
 import 'package:args/args.dart';
 import 'package:process_run/shell.dart';
@@ -37,12 +36,12 @@ class BuildScript {
       exit(1);
     }
 
-    await _initializeIosFastlane();
-
-    // if (!await _isFastlaneInitialized()) {
-    //   await _initializeFastlane();
-    // }
-    //await _executeBuildFlow(args);
+    _initializeIosFastlane();
+/*
+    if (!await _isFastlaneInitialized()) {
+      await _initializeFastlane();
+    }
+    await _executeBuildFlow(args);*/
   }
 
   ArgParser _createArgParser() {
@@ -94,44 +93,12 @@ class BuildScript {
         );
       }
 
-      final process = await Process.start(
-        'fastlane',
-        ['init'],
-        runInShell: true, // Ensures it works on Windows/macOS/Linux\
-        workingDirectory: '$projectDir/ios',
-      );
-
-      // Simulate input: 4 + Enter x4 (just like echo -e "4\n\n\n\n")
-      process.stdin.writeln('4');
-      process.stdin.writeln('');
-      process.stdin.writeln('');
-      process.stdin.writeln('');
-      process.stdin.writeln('');
-
-      // Optionally close stdin if fastlane expects no further input
-      await process.stdin.flush();
-      await process.stdin.close();
-
-      // Capture stdout and stderr
-      process.stdout.transform(utf8.decoder).listen((data) {
-        stdout.write(data);
-      });
-
-      process.stderr.transform(utf8.decoder).listen((data) {
-        stderr.write(data);
-      });
-
-      final exitCode = await process.exitCode;
-      print('Process exited with code $exitCode');
-
-      /*
       // Ensure fastlane directory exists
       final fastlaneDir = Directory('$projectDir/ios/fastlane');
       if (!fastlaneDir.existsSync()) {
         await fastlaneDir.create(recursive: true);
       }
-*/
-/*
+
       // Read automate_config.yaml
       final configFile = File('$projectDir/automate_config.yaml');
       if (!configFile.existsSync()) {
@@ -205,7 +172,24 @@ end
       // Write Fastfile for iOS
       final fastfile = File('$projectDir/ios/fastlane/Fastfile');
       await fastfile.writeAsString(fastlaneContent);
-      print('iOS Fastfile overwritten successfully');*/
+      print('iOS Fastfile Created successfully');
+
+      // Create Gemfile
+      final gemfile = File('$projectDir/ios/Gemfile');
+      if (!gemfile.existsSync()) {
+        await gemfile.create(recursive: true);
+      }
+
+      // Write on Gemfile
+      const gemfileContent = '''
+source 'https://rubygems.org'
+gem 'fastlane'
+''';
+      await gemfile.writeAsString(gemfileContent);
+
+      // Execute bundle install to generate Gemfile.lock
+      await _runCommand('cd ios && bundle install', 'Installing dependencies');
+      print('IOS Fastlane initialized successfully.');
     } catch (e) {
       throw Exception('Failed to initialize iOS Fastlane: $e');
     }
