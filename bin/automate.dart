@@ -192,7 +192,7 @@ gem 'fastlane'
       // Execute bundle install to generate Gemfile.lock
       await _runCommand(
         'bundle',
-        arguments: ['install', '--gemfile=$projectDir/ios/Gemfile'],
+        arguments: ['install' ,"--path", "vendor/bundle"],
         description: 'Generating Gemfile.lock',
         workingDir: 'ios',
       );
