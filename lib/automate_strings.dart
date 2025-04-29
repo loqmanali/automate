@@ -47,7 +47,7 @@ platform :ios do
       ipa: "../build/ios/ipa/Banic.ipa",
       skip_screenshots: true,
       skip_metadata: false,
-      metadata_path: "./metadata",
+      metadata_path: "%metadata_path%",
       precheck_include_in_app_purchases: false,
       submit_for_review: true,
       automatic_release: true,

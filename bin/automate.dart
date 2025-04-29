@@ -300,6 +300,19 @@ class AutomateScript {
         metadataDir.createSync();
       }
 
+      // Edit FastFile to Replace %metadata_path% placeholder with real value
+      final fastFile = File('$_projectDir/ios/fastlane/Fastfile');
+      if (!fastFile.existsSync()) {
+        throw Exception('Fastfile not found at $_projectDir/ios/fastlane/Fastfile');
+      }
+      final fastFileContent = await fastFile.readAsString();
+      final newFastFileContent = fastFileContent.replaceAll(
+        '%metadata_path%',
+        metadataPath,
+      );
+      fastFile.writeAsStringSync(newFastFileContent);
+      print("Fastfile updated with metadata path successfully.");
+
       // Loop through each language
       for (final language in changeLog.keys) {
         final languageMetadataDir = Directory('$metadataPath/$language');
