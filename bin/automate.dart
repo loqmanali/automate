@@ -274,44 +274,63 @@ class AutomateScript {
 
   Future<void> _handleIOSUpdateBuild() async {
     try {
+      print("Extracting changelog from automate_config.yaml...");
       final YamlMap? changeLog = _automateConfig.info['changelog'] as YamlMap?;
       if (changeLog == null) {
         throw Exception(
           'Changelog required for update mode\nNo changelog found in automate_config.yaml',
         );
       }
+      print("Changelog extracted successfully.");
+
+      // Try to extract metadata path from config if it exists or use default "$_projectDir/ios/fastlane/metadata"
+      print("Trying to extract metadata path from automate_config.yaml...");
+      String? metadataPath = _automateConfig.ios['metadata_path'] as String?;
+      if (metadataPath?.isEmpty ?? true) {
+        print(
+          "No metadata path found in automate_config.yaml, using default path ios/fastlane/metadata....",
+        );
+        metadataPath = '$_projectDir/ios/fastlane/metadata';
+      }
 
       // Generate metadata directory and its localization files for fastlane
-      final metadataDir = Directory('$_projectDir/ios/metadata');
+      final metadataDir = Directory(metadataPath!);
       if (!metadataDir.existsSync()) {
+        print("Metadata directory not found at $metadataPath, creating...");
         metadataDir.createSync();
       }
 
       // Loop through each language
       for (final language in changeLog.keys) {
-        final languageMetadataDir = Directory(
-          '$_projectDir/ios/metadata/$language',
-        );
+        final languageMetadataDir = Directory('$metadataPath/$language');
         if (!languageMetadataDir.existsSync()) {
+          print(
+            "Metadata directory not found at $metadataPath/$language, creating...",
+          );
           languageMetadataDir.createSync();
         }
 
         final languageMetadataFile = File(
-          '$_projectDir/ios/metadata/$language/release_notes.txt',
+          '$metadataPath/$language/release_notes.txt',
         );
         if (!languageMetadataFile.existsSync()) {
+          print(
+            "Writing changelog to $metadataPath/$language/release_notes.txt...",
+          );
           languageMetadataFile.writeAsStringSync(
             changeLog[language].toString(),
           );
         }
-
-        await _runCommand(
-          'fastlane',
-          arguments: ['new_update'],
-          description: 'Uploading new update to distribution',
-          workingDir: 'ios',
-        );
       }
+      print("Metadata generated successfully.");
+
+      print("Uploading new update to distribution...");
+      await _runCommand(
+        'fastlane',
+        arguments: ['new_update'],
+        description: 'Uploading new update to distribution',
+        workingDir: 'ios',
+      );
     } on Exception {
       rethrow;
     }
