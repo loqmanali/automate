@@ -61,6 +61,7 @@ platform :ios do
       precheck_include_in_app_purchases: false,
       submit_for_review: true,
       automatic_release: true,
+      force: true,
       submission_information: {
               export_compliance_uses_encryption: false, # No non-standard encryption
               export_compliance_contains_proprietary_cryptography: false, # No proprietary cryptography
