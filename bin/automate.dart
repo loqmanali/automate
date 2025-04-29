@@ -127,6 +127,15 @@ class AutomateScript {
       // Define Fastlane configuration for iOS
       const fastlaneTemplate = AutomateStrings.fastFileContent;
 
+      // Check for placeholder if key_id, issuer_id, or key_filepath is missing
+      if (!fastlaneTemplate.contains('%key_id%') &&
+          !fastlaneTemplate.contains('%issuer_id%') &&
+          !fastlaneTemplate.contains('%key_filepath%')) {
+        throw Exception(
+          'Error: Missing key_id, issuer_id, or key_filepath in Fastlane template\nMust be all of: %key_id%, %issuer_id%, %key_filepath% as placeholders',
+        );
+      }
+
       // Replace placeholders with config values
       final fastlaneContent = fastlaneTemplate
           .replaceAll('%key_id%', keyId)
