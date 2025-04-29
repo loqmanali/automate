@@ -2,7 +2,7 @@ import 'dart:io';
 import 'package:args/args.dart';
 import 'package:automate/automate_config.dart';
 import 'package:automate/automate_enums.dart';
-import 'package:automate/automate_strings.dart';
+import 'package:automate/constants.dart';
 import 'package:automate/pubspec_utils.dart';
 import 'package:yaml/yaml.dart';
 
@@ -74,12 +74,12 @@ class AutomateScript {
 
   bool _isFastlaneInitialized() {
     if (platform == AutomatePlatform.ios) {
-      return Directory('$_projectDir/ios/fastlane').existsSync();
+      return Directory(Constants.iosFastlaneDirPath).existsSync();
     } else if (platform == AutomatePlatform.android) {
-      return Directory('$_projectDir/android/fastlane').existsSync();
+      return Directory(Constants.androidFastlaneDirPath).existsSync();
     }
-    return Directory('$_projectDir/ios/fastlane').existsSync() &&
-        Directory('$_projectDir/android/fastlane').existsSync();
+    return Directory(Constants.iosFastlaneDirPath).existsSync() &&
+        Directory(Constants.androidFastlaneDirPath).existsSync();
   }
 
   Future<void> _initializeFastlane() async {
@@ -99,15 +99,15 @@ class AutomateScript {
     print('Initializing Fastlane for iOS...');
     try {
       // Check if ios directory exists
-      final iosDir = Directory('$_projectDir/ios');
+      final iosDir = Directory(Constants.iosDirPath);
       if (!iosDir.existsSync()) {
         throw Exception(
-          'iOS directory not found at $_projectDir/ios. Ensure this is a valid Flutter project with an iOS module.',
+          'iOS directory not found at ${Constants.iosDirPath}. Ensure this is a valid Flutter project with an iOS module.',
         );
       }
 
       // Ensure fastlane directory exists
-      final fastlaneDir = Directory('$_projectDir/ios/fastlane');
+      final fastlaneDir = Directory(Constants.iosFastlaneDirPath);
       if (!fastlaneDir.existsSync()) {
         await fastlaneDir.create(recursive: true);
       }
@@ -125,7 +125,7 @@ class AutomateScript {
       }
 
       // Define Fastlane configuration for iOS
-      const fastlaneTemplate = AutomateStrings.fastFileContent;
+      const fastlaneTemplate = Constants.iosFastFileContent;
 
       // Check for placeholder if key_id, issuer_id, or key_filepath is missing
       if (!fastlaneTemplate.contains('%key_id%') &&
@@ -143,7 +143,7 @@ class AutomateScript {
           .replaceAll('%key_filepath%', keyFilepath);
 
       // Write Fastfile for iOS
-      final fastfile = File('$_projectDir/ios/fastlane/Fastfile');
+      final fastfile = File(Constants.iosFastfilePath);
       await fastfile.writeAsString(fastlaneContent);
       print('IOS Fastlane initialized successfully.');
     } catch (e) {
@@ -154,10 +154,10 @@ class AutomateScript {
   Future<void> _initializeAndroidFastlane() async {
     print('Initializing Fastlane for Android...');
     // Check if android directory exists
-    final androidDir = Directory('$_projectDir/android');
+    final androidDir = Directory(Constants.androidDirPath);
     if (!androidDir.existsSync()) {
       throw Exception(
-        'Android directory not found at $_projectDir/android. Ensure this is a valid Flutter project with an Android module.',
+        'Android directory not found at ${Constants.androidDirPath}. Ensure this is a valid Flutter project with an Android module.',
       );
     }
   }
@@ -283,7 +283,49 @@ class AutomateScript {
       }
       print("Changelog extracted successfully.");
 
-      // Try to extract metadata path from config if it exists or use default "$_projectDir/ios/fastlane/metadata"
+      //Prepare changelog for Deliverfile
+      final buffer = StringBuffer('\nrelease_notes({');
+      for (final locale in changeLog.keys) {
+        final message = changeLog[locale] as String;
+        final escapedMessage = message.replaceAll('"', r'\"')
+          ..replaceAll('\n', r'\n');
+        buffer.writeln("  '$locale' => \"$escapedMessage\",");
+      }
+      buffer.write('})');
+      final releaseNotesContent = buffer.toString();
+
+      // Check if Deliverfile exists
+      final deliverFile = File(Constants.iosDeliverfilePath);
+      if (!deliverFile.existsSync()) {
+        deliverFile.createSync();
+        print(
+          "Deliverfile not found at ${Constants.iosDeliverfilePath}, creating...",
+        );
+      }
+
+      // Read Deliverfile content
+      String content = await deliverFile.readAsString();
+
+      final releaseNotesPattern = RegExp(
+        r'release_notes\s*\(\s*\{[^}]*\}\s*\)',
+        multiLine: true,
+      );
+
+      if (releaseNotesPattern.hasMatch(content)) {
+        print("Existing release notes found. Replacing...");
+        content = content.replaceFirst(
+          releaseNotesPattern,
+          releaseNotesContent,
+        );
+      } else {
+        print("No existing release notes found. Appending...");
+        content += releaseNotesContent;
+      }
+
+      await deliverFile.writeAsString(content);
+      print("Deliverfile updated successfully.");
+
+      /*      // Try to extract metadata path from config if it exists or use default "$_projectDir/ios/fastlane/metadata"
       print("Trying to extract metadata path from automate_config.yaml...");
       String? metadataPath = _automateConfig.ios['metadata_path'] as String?;
       if (metadataPath?.isEmpty ?? true) {
@@ -335,7 +377,7 @@ class AutomateScript {
           );
         }
       }
-      print("Metadata generated successfully.");
+      print("Metadata generated successfully.");*/
 
       print("Uploading new update to distribution...");
       await _runCommand(

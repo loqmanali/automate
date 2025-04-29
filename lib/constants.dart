@@ -1,7 +1,20 @@
-class AutomateStrings {
-  AutomateStrings._();
+import 'dart:io';
 
-  static const String fastFileContent = '''
+class Constants {
+  Constants._();
+  static final String _projectDir = Directory.current.path;
+  static String get iosDirPath => '$_projectDir/ios';
+  static String get androidDirPath => '$_projectDir/android';
+  static String get iosFastlaneDirPath => '$iosDirPath/fastlane';
+  static String get iosFastfilePath => '$iosFastlaneDirPath/Fastfile';
+
+  static String get androidFastlaneDirPath => '$androidDirPath/fastlane';
+  static String get androidFastfilePath => '$androidFastlaneDirPath/Fastfile';
+  static String get iosDeliverfilePath => '$iosFastlaneDirPath/Deliverfile';
+  static String get androidDeliverfilePath =>
+      '$androidFastlaneDirPath/Deliverfile';
+
+  static const String iosFastFileContent = '''
 # This file contains the fastlane.tools configuration
 # You can find the documentation at https://docs.fastlane.tools
 #
@@ -42,16 +55,12 @@ platform :ios do
 
   desc "Update App With New Build On App Store Connect"
   lane :new_update do
-
     deliver(
       ipa: "../build/ios/ipa/Banic.ipa",
       skip_screenshots: true,
-      skip_metadata: false,
-      metadata_path: "%metadata_path%",
       precheck_include_in_app_purchases: false,
       submit_for_review: true,
       automatic_release: true,
-      force: true,
       submission_information: {
               export_compliance_uses_encryption: false, # No non-standard encryption
               export_compliance_contains_proprietary_cryptography: false, # No proprietary cryptography
@@ -64,7 +73,6 @@ platform :ios do
               add_id_info_uses_idfa: false # No IDFA usage
             }
       )
-
   end
 end
 
