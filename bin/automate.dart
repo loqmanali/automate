@@ -1,122 +1,123 @@
 import 'dart:io';
 import 'package:args/args.dart';
+import 'package:automate/automate_config.dart';
+import 'package:automate/automate_enums.dart';
+import 'package:automate/automate_strings.dart';
+import 'package:automate/pubspec_utils.dart';
 import 'package:yaml/yaml.dart';
 
-class BuildScript {
-  final String projectDir = Directory.current.path;
+class AutomateScript {
+  late AutomatePlatform platform;
+  late AutomateMode mode;
+
+  final String _projectDir = Directory.current.path;
+  final AutomateConfig _automateConfig = AutomateConfig.instance;
 
   Future<void> run(List<String> arguments) async {
-    final parser = _createArgParser();
+    if (arguments.isEmpty) {
+      throw Exception(
+        'Error: Mode (beta, release, or update) must be provided.',
+      );
+    }
+
+    if (['beta', 'release', 'update'].contains(arguments.first)) {
+      mode = arguments.first.toAutomateMode();
+    } else {
+      throw Exception(
+        'Error: Invalid mode "${arguments.first}". Must be one of: beta, release, update.',
+      );
+    }
+
+    final restArguments = arguments.skip(1).toList(); // optional named args
+
+    final parser =
+        ArgParser()..addOption(
+          'platform',
+          allowed: ['ios', 'android'],
+          help: 'Target platform',
+          abbr: 'p',
+        );
+
     final ArgResults args;
 
     try {
-      args = parser.parse(arguments);
+      args = parser.parse(restArguments);
     } catch (e) {
-      print('Error parsing arguments: $e');
-      print(parser.usage);
-      exit(1);
+      throw Exception('Error parsing arguments: $e\n${parser.usage}');
     }
 
-    // Validate that exactly one of --beta or --release is provided
-    if (!(args['beta'] as bool) && !(args['release'] as bool)) {
-      print('Error: You must specify either --beta or --release.');
-      print(parser.usage);
-      exit(1);
+    if (args['platform'] == 'ios') {
+      platform = AutomatePlatform.ios;
+    } else if (args['platform'] == 'android') {
+      platform = AutomatePlatform.android;
     }
+
+    // load automate_config.yaml
+    await _automateConfig.load();
 
     // Check if Fastlane is installed
-    try {
-      await _runCommand(
-        "fastlane",
-        arguments: ["--version"],
-        description: "Fastlane version",
-      );
-    } catch (e) {
-      print(
-        'Error: Fastlane is not installed or not accessible. Please install Fastlane using `gem install fastlane`.',
-      );
-      exit(1);
-    }
+    await _checkFastLane();
 
-    if (!await _isFastlaneInitialized()) {
+    if (!_isFastlaneInitialized()) {
       await _initializeFastlane();
     }
-    await _executeBuildFlow(args);
+    await _executeBuildFlow();
   }
 
-  ArgParser _createArgParser() {
-    return ArgParser()
-      ..addFlag('beta', help: 'Run beta build and deployment', negatable: false)
-      ..addFlag(
-        'release',
-        help: 'Run release build and deployment',
-        negatable: false,
-      )
-      ..addOption(
-        'platform',
-        allowed: ['ios', 'android'],
-        help: 'Target platform (required)',
-        mandatory: true,
-      )
-      ..addFlag(
-        'firebase',
-        help: 'Use Firebase App Distribution for Android beta (optional)',
-        negatable: false,
-      );
+  Future<void> _checkFastLane() async {
+    await _runCommand(
+      "fastlane",
+      arguments: ["--version"],
+      description: "Fastlane version",
+    );
   }
 
-  Future<bool> _isFastlaneInitialized() async {
-    return Directory('$projectDir/ios/fastlane').existsSync() &&
-        Directory('$projectDir/android/fastlane').existsSync();
+  bool _isFastlaneInitialized() {
+    if (platform == AutomatePlatform.ios) {
+      return Directory('$_projectDir/ios/fastlane').existsSync();
+    } else if (platform == AutomatePlatform.android) {
+      return Directory('$_projectDir/android/fastlane').existsSync();
+    }
+    return Directory('$_projectDir/ios/fastlane').existsSync() &&
+        Directory('$_projectDir/android/fastlane').existsSync();
   }
 
   Future<void> _initializeFastlane() async {
     print('Initializing Fastlane...');
-    try {
+    if (platform == AutomatePlatform.all) {
       await _initializeIosFastlane();
       await _initializeAndroidFastlane();
-      print('Fastlane initialized successfully.');
-    } catch (e) {
-      print('Failed to initialize Fastlane: $e');
-      exit(1);
+    } else if (platform == AutomatePlatform.ios) {
+      await _initializeIosFastlane();
+    } else if (platform == AutomatePlatform.android) {
+      await _initializeAndroidFastlane();
     }
+    print('Fastlane initialized successfully.');
   }
 
   Future<void> _initializeIosFastlane() async {
     print('Initializing Fastlane for iOS...');
     try {
       // Check if ios directory exists
-      final iosDir = Directory('$projectDir/ios');
+      final iosDir = Directory('$_projectDir/ios');
       if (!iosDir.existsSync()) {
         throw Exception(
-          'iOS directory not found at $projectDir/ios. Ensure this is a valid Flutter project with an iOS module.',
+          'iOS directory not found at $_projectDir/ios. Ensure this is a valid Flutter project with an iOS module.',
         );
       }
 
       // Ensure fastlane directory exists
-      final fastlaneDir = Directory('$projectDir/ios/fastlane');
+      final fastlaneDir = Directory('$_projectDir/ios/fastlane');
       if (!fastlaneDir.existsSync()) {
         await fastlaneDir.create(recursive: true);
       }
 
-      // Read automate_config.yaml
-      final configFile = File('$projectDir/automate_config.yaml');
-      if (!configFile.existsSync()) {
-        throw Exception('automate_config.yaml not found in project root');
-      }
-      final configContent = await configFile.readAsString();
-      final config = loadYaml(configContent) as YamlMap;
-
       // Extract App Store Connect API key values
-      final iosConfig = config['ios']?['app_store_connect'] as YamlMap?;
-      if (iosConfig == null) {
-        throw Exception(
-          'Missing ios.app_store_connect in automate_config.yaml',
-        );
-      }
-      final keyId = iosConfig['key_id']?.toString();
-      final issuerId = iosConfig['issuer_id']?.toString();
-      final keyFilepath = iosConfig['key_filepath']?.toString();
+      final appStoreConfig = _automateConfig.appStoreConfig;
+
+      final keyId = appStoreConfig['key_id']?.toString();
+      final issuerId = appStoreConfig['issuer_id']?.toString();
+      final keyFilepath = appStoreConfig['key_filepath']?.toString();
       if (keyId == null || issuerId == null || keyFilepath == null) {
         throw Exception(
           'Missing key_id, issuer_id, or key_filepath in automate_config.yaml',
@@ -124,45 +125,7 @@ class BuildScript {
       }
 
       // Define Fastlane configuration for iOS
-      const fastlaneTemplate = '''
-# This file contains the fastlane.tools configuration
-# You can find the documentation at https://docs.fastlane.tools
-#
-# For a list of all available actions, check out
-#
-#     https://docs.fastlane.tools/actions
-#
-# For a list of all available plugins, check out
-#
-#     https://docs.fastlane.tools/plugins/available-plugins
-#
-
-# Uncomment the line if you want fastlane to automatically update itself
-# update_fastlane
-
-default_platform(:ios)
-
-platform :ios do
-
-  desc "Upload New Build to Test Flight"
-  lane :beta do
-    api_key = app_store_connect_api_key(
-      key_id: "%key_id%",
-      issuer_id: "%issuer_id%",
-      key_filepath: "%key_filepath%",
-    )
-
-    pilot(api_key: api_key,
-      ipa: "../build/ios/ipa/Banic.ipa",
-      distribute_external: false,
-      notify_external_testers: false,
-      beta_app_description: "",
-      expire_previous_builds: true,
-      groups: "Testers",
-    )
-  end
-end
-''';
+      const fastlaneTemplate = AutomateStrings.fastFileContent;
 
       // Replace placeholders with config values
       final fastlaneContent = fastlaneTemplate
@@ -171,30 +134,8 @@ end
           .replaceAll('%key_filepath%', keyFilepath);
 
       // Write Fastfile for iOS
-      final fastfile = File('$projectDir/ios/fastlane/Fastfile');
+      final fastfile = File('$_projectDir/ios/fastlane/Fastfile');
       await fastfile.writeAsString(fastlaneContent);
-      print('iOS Fastfile Created successfully');
-
-      // Create Gemfile
-      final gemfile = File('$projectDir/ios/Gemfile');
-      if (!gemfile.existsSync()) {
-        await gemfile.create(recursive: true);
-      }
-
-      // Write on Gemfile
-      const gemfileContent = '''
-source 'https://rubygems.org'
-gem 'fastlane'
-''';
-      await gemfile.writeAsString(gemfileContent);
-      /*
-      // Execute bundle install to generate Gemfile.lock
-      await _runCommand(
-        'bundle',
-        arguments: ['install' ,"--path", "vendor/bundle"],
-        description: 'Generating Gemfile.lock',
-        workingDir: 'ios',
-      );*/
       print('IOS Fastlane initialized successfully.');
     } catch (e) {
       throw Exception('Failed to initialize iOS Fastlane: $e');
@@ -203,26 +144,16 @@ gem 'fastlane'
 
   Future<void> _initializeAndroidFastlane() async {
     print('Initializing Fastlane for Android...');
-    try {
-      // Check if android directory exists
-      final androidDir = Directory('$projectDir/android');
-      if (!androidDir.existsSync()) {
-        throw Exception(
-          'Android directory not found at $projectDir/android. Ensure this is a valid Flutter project with an Android module.',
-        );
-      }
-
-      // Run fastlane init with piped input to select manual setup
-      /*  await _runCommand(
-        'cd android && echo -e "4\\n\\n\\n" | fastlane init',
-        'Android',
-      );*/
-    } catch (e) {
-      throw Exception('Failed to initialize Android Fastlane: $e');
+    // Check if android directory exists
+    final androidDir = Directory('$_projectDir/android');
+    if (!androidDir.existsSync()) {
+      throw Exception(
+        'Android directory not found at $_projectDir/android. Ensure this is a valid Flutter project with an Android module.',
+      );
     }
   }
 
-  Future<void> _executeBuildFlow(ArgResults args) async {
+  Future<void> _executeBuildFlow() async {
     try {
       await _runCommand(
         'flutter',
@@ -235,184 +166,183 @@ gem 'fastlane'
         description: 'Fetching dependencies',
       );
 
-      final platform = args['platform'];
-      final useFirebase = args['firebase'] as bool;
+      // Increment version
+      await PubspecUtils.incrementVersion();
 
-      if (args['beta']) {
-        await _handleBetaBuild(platform, useFirebase);
-      } else if (args['release']) {
-        await _handleReleaseBuild(platform);
+      // Build Process
+      switch (platform) {
+        case AutomatePlatform.all:
+          await _buildAndroid();
+          await _buildIOS();
+          break;
+        case AutomatePlatform.ios:
+          await _buildIOS();
+          break;
+        case AutomatePlatform.android:
+          await _buildAndroid();
+          break;
+      }
+
+      // Upload Process
+      switch (mode) {
+        case AutomateMode.beta:
+          await _handleBetaBuild();
+          break;
+        case AutomateMode.release:
+          // await _handleReleaseBuild();
+          break;
+        case AutomateMode.update:
+          await _handleUpdateBuild();
+          break;
+        case AutomateMode.none:
+          break;
       }
     } catch (e) {
-      print('Build flow failed: $e');
-      exit(1);
+      rethrow;
     }
   }
 
-  Future<void> _handleBetaBuild(String platform, bool useFirebase) async {
-    if (platform == 'ios') {
-      await _runCommand(
-        'pod',
-        arguments: ['install', '--repo-update'],
-        description: 'Installing CocoaPods',
-        workingDir: 'ios',
-      );
-      await _incrementVersionAndBuildNumber();
-      await _runCommand(
-        'flutter',
-        arguments: ['build', "ipa", "--release"],
-        description: 'Building iOS IPA',
-      );
-      await _runCommand(
-        'fastlane',
-        arguments: ['beta'],
-        description: 'Uploading to TestFlight',
-        workingDir: 'ios',
-      );
-    } else if (platform == 'android') {
-      if (useFirebase) {
-        await _incrementVersionAndBuildNumber();
-        await _runCommand(
-          'flutter',
-          arguments: ['build', "appbundle", "--release"],
-          description: 'Building Android AppBundle',
-        );
-        await _uploadToFirebaseAppDistribution();
-      } else {
-        await _incrementVersionAndBuildNumber();
-        await _runCommand(
-          'flutter',
-          arguments: ['build', "apk", "--release"],
-          description: 'Building Android APK',
-        );
-      }
-    }
-  }
-
-  Future<void> _handleReleaseBuild(String platform) async {
-    await _incrementVersionAndBuildNumber();
-
-    if (platform == 'ios') {
-      await _runCommand(
-        'pod',
-        arguments: ['install', '--repo-update'],
-        description: 'Installing CocoaPods',
-        workingDir: 'ios',
-      );
-      await _runCommand(
-        'flutter',
-        arguments: ['build', 'ipa', '--release'],
-        description: 'Building iOS IPA',
-      );
-      await _runCommand(
-        'fastlane',
-        arguments: ['release'],
-        description: 'Uploading to App Store',
-        workingDir: 'ios',
-      );
-    } else if (platform == 'android') {
-      await _runCommand(
-        'flutter',
-        arguments: ['build', 'appbundle', '--release'],
-        description: 'Building Android AppBundle',
-      );
-      await _runCommand(
-        'fastlane',
-        arguments: ['release'],
-        description: 'Uploading to Play Store',
-        workingDir: 'android',
-      );
-    }
-  }
-
-  Future<void> _incrementVersionAndBuildNumber() async {
-    final pubspec = await _readPubspec();
-    final version = pubspec['version'].toString();
-    final parts = version.split('+');
-    final versionParts = parts[0].split('.');
-    final patch = int.parse(versionParts[2]) + 1;
-    final newVersion = '${versionParts[0]}.${versionParts[1]}.$patch';
-    final buildNumber = int.parse(parts[1]) + 1;
-
-    await _writePubspec('$newVersion+$buildNumber');
-    print('Incremented version to $newVersion, build number to $buildNumber');
-  }
-
-  Future<YamlMap> _readPubspec() async {
-    final file = File('$projectDir/pubspec.yaml');
-    if (!file.existsSync()) {
-      throw Exception('pubspec.yaml not found');
-    }
-    return loadYaml(await file.readAsString()) as YamlMap;
-  }
-
-  Future<void> _writePubspec(String newVersion) async {
-    final file = File('$projectDir/pubspec.yaml');
-    final content = await file.readAsString();
-    final updatedContent = content.replaceFirst(
-      RegExp(r'version: .+'),
-      'version: $newVersion',
-    );
-    await file.writeAsString(updatedContent);
-  }
-
-  Future<void> _uploadToFirebaseAppDistribution() async {
-    final configFile = File('$projectDir/automate_config.yaml');
-    if (!configFile.existsSync()) {
-      throw Exception('automate_config.yaml not found in project root');
-    }
-    final configContent = await configFile.readAsString();
-    final config = loadYaml(configContent) as YamlMap;
-
-    final androidConfig = config['android']?['firebase'] as YamlMap?;
-    if (androidConfig == null) {
-      throw Exception('Missing android.firebase in automate_config.yaml');
-    }
-    final firebaseToken = androidConfig['token']?.toString();
-    final appId = androidConfig['app_id']?.toString();
-    if (firebaseToken == null || appId == null) {
-      throw Exception(
-        'Missing token or app_id in android.firebase in automate_config.yaml',
-      );
-    }
-
-    final command =
-        'firebase appdistribution:distribute build/app/outputs/bundle/release/app-release.aab '
-        '--app $appId --token $firebaseToken';
+  Future<void> _buildAndroid() async {
     await _runCommand(
-      command,
-      description: 'Uploading to Firebase App Distribution',
+      'flutter',
+      arguments: ['build', "appbundle", "--release"],
+      description: 'Building Android AppBundle',
     );
+  }
+
+  Future<void> _buildIOS() async {
+    await _runCommand(
+      'pod',
+      arguments: ['install', '--repo-update'],
+      description: 'Installing CocoaPods',
+      workingDir: 'ios',
+    );
+    await _runCommand(
+      'flutter',
+      arguments: ['build', "ipa", "--release"],
+      description: 'Building iOS IPA',
+    );
+  }
+
+  Future<void> _handleBetaBuild() async {
+    switch (platform) {
+      case AutomatePlatform.all:
+        await _uploadToTestFlight();
+        //  await _uploadToFirebaseAppDistribution();
+        break;
+      case AutomatePlatform.ios:
+        await _uploadToTestFlight();
+        break;
+      case AutomatePlatform.android:
+        //  await _uploadToFirebaseAppDistribution();
+        break;
+    }
+  }
+
+  Future<void> _uploadToTestFlight() async {
+    await _runCommand(
+      'fastlane',
+      arguments: ['beta'],
+      description: 'Uploading to TestFlight',
+      workingDir: 'ios',
+    );
+  }
+
+  Future<void> _handleUpdateBuild() async {
+    switch (platform) {
+      case AutomatePlatform.all:
+        await _handleIOSUpdateBuild();
+        //await _handleAndroidUpdateBuild();
+        break;
+      case AutomatePlatform.ios:
+        await _handleIOSUpdateBuild();
+        break;
+      case AutomatePlatform.android:
+        //await _handleAndroidUpdateBuild();
+        break;
+    }
+  }
+
+  Future<void> _handleIOSUpdateBuild() async {
+    final YamlMap? changeLog = _automateConfig.info['changelog'] as YamlMap?;
+    if (changeLog == null) {
+      throw Exception(
+        'Changelog required for update mode\nNo changelog found in automate_config.yaml',
+      );
+    }
+
+    // Generate metadata directory and its localization files for fastlane
+    final metadataDir = Directory('$_projectDir/ios/metadata');
+    if (!metadataDir.existsSync()) {
+      metadataDir.createSync();
+    }
+
+    // Loop through each language
+    for (final language in changeLog.keys) {
+      final languageMetadataDir = Directory(
+        '$_projectDir/ios/metadata/$language',
+      );
+      if (!languageMetadataDir.existsSync()) {
+        languageMetadataDir.createSync();
+      }
+
+      final languageMetadataFile = File(
+        '$_projectDir/ios/metadata/$language/release_notes.txt',
+      );
+      if (!languageMetadataFile.existsSync()) {
+        languageMetadataFile.writeAsStringSync(changeLog[language].toString());
+      }
+
+      await _runCommand(
+        'fastlane',
+        arguments: ['new_update'],
+        description: 'Uploading new update to distribution',
+        workingDir: 'ios',
+      );
+    }
   }
 
   Future<void> _runCommand(
     String executable, {
-
     List<String> arguments = const [],
     String? description,
     String? workingDir,
   }) async {
     print('Running: $description...');
     try {
-      final result = await Process.run(
+      final process = await Process.start(
         executable,
         arguments,
         workingDirectory:
-            workingDir != null ? '$projectDir/$workingDir' : projectDir,
+            workingDir != null ? '$_projectDir/$workingDir' : _projectDir,
+        runInShell: true,
       );
-      if (result.exitCode != 0) {
-        print('Error Output: ${result.stderr}');
-        throw Exception('Command failed with exit code ${result.exitCode}');
+      // Listen to stdout
+      process.stdout.transform(const SystemEncoding().decoder).listen((data) {
+        stdout.write(data); // Print directly to terminal
+      });
+
+      // Listen to stderr
+      process.stderr.transform(const SystemEncoding().decoder).listen((data) {
+        stderr.write(data); // Print errors
+      });
+
+      final exitCode = await process.exitCode;
+      if (exitCode != 0) {
+        throw Exception('Command failed with exit code $exitCode');
       }
-      print('Output: ${result.stdout}');
     } catch (e) {
-      print('Error running command: $e');
-      exit(1);
+      throw Exception('Error running command: $e');
     }
   }
 }
 
 void main(List<String> arguments) async {
-  final script = BuildScript();
-  await script.run(arguments);
+  final script = AutomateScript();
+  try {
+    await script.run(arguments);
+  } catch (e) {
+    print(e);
+    exit(1);
+  }
 }
