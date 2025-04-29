@@ -132,7 +132,7 @@ class AutomateScript {
           !fastlaneTemplate.contains('%issuer_id%') &&
           !fastlaneTemplate.contains('%key_filepath%')) {
         throw Exception(
-          'Error: Missing key_id, issuer_id, or key_filepath in Fastlane template\nMust be all of: %key_id%, %issuer_id%, %key_filepath% as placeholders',
+          'Error: Missing key_id, issuer_id, or key_filepath in Fastlane template Must be all of: %key_id%, %issuer_id%, %key_filepath% existing in Fastlane template as placeholders',
         );
       }
 

@@ -22,9 +22,9 @@ default_platform(:ios)
 platform :ios do
   before_all do
     app_store_connect_api_key(
-      key_id: "",
-      issuer_id: "",
-      key_filepath: "",
+      key_id: %key_id%,
+      issuer_id: %issuer_id%,
+      key_filepath: %key_filepath%,
     )
   end
 
