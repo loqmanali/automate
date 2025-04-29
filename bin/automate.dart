@@ -175,8 +175,11 @@ class AutomateScript {
         description: 'Fetching dependencies',
       );
 
-      // Increment version
-      await PubspecUtils.incrementVersion();
+      // Increment version only if not android beta
+      if (!(platform == AutomatePlatform.android &&
+          mode == AutomateMode.beta)) {
+        await PubspecUtils.incrementVersion();
+      }
 
       // Build Process
       switch (platform) {
@@ -214,7 +217,7 @@ class AutomateScript {
   Future<void> _buildAndroid() async {
     await _runCommand(
       'flutter',
-      arguments: ['build', "appbundle", "--release"],
+      arguments: ['build', "apk", "--release"],
       description: 'Building Android AppBundle',
     );
   }
@@ -237,13 +240,14 @@ class AutomateScript {
     switch (platform) {
       case AutomatePlatform.all:
         await _uploadToTestFlight();
-        //  await _uploadToFirebaseAppDistribution();
+        await _buildAndroid();
+
         break;
       case AutomatePlatform.ios:
         await _uploadToTestFlight();
         break;
       case AutomatePlatform.android:
-        //  await _uploadToFirebaseAppDistribution();
+        await _buildAndroid();
         break;
     }
   }
