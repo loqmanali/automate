@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:automate/constants.dart';
 import 'package:yaml/yaml.dart';
 
 class AutomateConfig {
@@ -7,8 +8,6 @@ class AutomateConfig {
   static AutomateConfig? _instance;
   static AutomateConfig get instance => _instance ??= AutomateConfig._();
   AutomateConfig._();
-
-  static final String _projectDir = Directory.current.path;
 
   late YamlMap _config;
 
@@ -28,19 +27,12 @@ class AutomateConfig {
     return appStoreConfig;
   }
 
-  YamlMap get info {
-    final info = _config['info'] as YamlMap?;
-    if (info == null) {
-      throw Exception('Missing info in automate_config.yaml');
-    }
-    return info;
-  }
 
   Future<void> load() async {
     try {
-      final configFile = File('$_projectDir/automate_config.yaml');
+      final configFile = File(Constants.automateConfigFilePath);
       if (!configFile.existsSync()) {
-        throw Exception('automate_config.yaml not found in project root');
+        throw Exception('automate_config.yaml not found in the automate directory');
       }
       final configContent = await configFile.readAsString();
       _config = loadYaml(configContent) as YamlMap;

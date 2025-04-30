@@ -3,15 +3,17 @@ import 'package:args/args.dart';
 import 'package:automate/automate_config.dart';
 import 'package:automate/automate_enums.dart';
 import 'package:automate/constants.dart';
+import 'package:automate/templates.dart';
 import 'package:automate/pubspec_utils.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:yaml/yaml.dart';
 
 class AutomateScript {
   late AutomatePlatform platform;
   late AutomateMode mode;
+  final AutomateConfig _automateConfig = AutomateConfig.instance;
 
   final String _projectDir = Directory.current.path;
-  final AutomateConfig _automateConfig = AutomateConfig.instance;
 
   Future<void> run(List<String> arguments) async {
     if (arguments.isEmpty) {
@@ -22,6 +24,11 @@ class AutomateScript {
 
     if (['beta', 'release', 'update'].contains(arguments.first)) {
       mode = arguments.first.toAutomateMode();
+    } else if (arguments.first == 'init') {
+      //await _init();
+      final packageInfo = await PackageInfo.fromPlatform();
+      print(packageInfo.packageName);
+      exit(0);
     } else {
       throw Exception(
         'Error: Invalid mode "${arguments.first}". Must be one of: beta, release, update.',
@@ -55,24 +62,56 @@ class AutomateScript {
     // load automate_config.yaml
     await _automateConfig.load();
 
-    // Check if Fastlane is installed
-    await _checkFastLane();
-
-    if (!_isFastlaneInitialized()) {
+    if (!await _isFastlaneInitialized()) {
       await _initializeFastlane();
     }
+
     await _executeBuildFlow();
   }
 
-  Future<void> _checkFastLane() async {
+  Future<void> _init() async {
+    print('Initializing Automate...');
+
+    // Create automate dir if it doesn't exist in project root
+    print('Creating ${Constants.automateDirPath}...');
+    _createNewDirectory(Constants.automateDirPath);
+
+    // Generate automate_config.yaml
+    print(
+      'Creating in automate directory ${Constants.automateConfigFilePath}...',
+    );
+    _createNewFile(Constants.automateConfigFilePath);
+    await File(
+      Constants.automateConfigFilePath,
+    ).writeAsString(Templates.automateConfigContent);
+
+    // Generate app_rating_config.json
+    print('Creating in automate directory ${Constants.appRatingConfigPath}...');
+    _createNewFile(Constants.appRatingConfigPath);
+    await File(
+      Constants.appRatingConfigPath,
+    ).writeAsString(Templates.iosAppRatingConfig);
+  }
+
+  void _createNewDirectory(String path) {
+    if (!Directory(path).existsSync()) {
+      Directory(path).createSync();
+    }
+  }
+
+  void _createNewFile(String path) {
+    if (!File(path).existsSync()) {
+      File(path).createSync();
+    }
+  }
+
+  Future<bool> _isFastlaneInitialized() async {
     await _runCommand(
       "fastlane",
       arguments: ["--version"],
       description: "Fastlane version",
     );
-  }
 
-  bool _isFastlaneInitialized() {
     if (platform == AutomatePlatform.ios) {
       return Directory(Constants.iosFastlaneDirPath).existsSync();
     } else if (platform == AutomatePlatform.android) {
@@ -125,7 +164,7 @@ class AutomateScript {
       }
 
       // Define Fastlane configuration for iOS
-      const fastlaneTemplate = Constants.iosFastFileContent;
+      const fastlaneTemplate = Templates.iosFastFileContent;
 
       // Check for placeholder if key_id, issuer_id, or key_filepath is missing
       if (!fastlaneTemplate.contains('%key_id%') &&
@@ -279,7 +318,7 @@ class AutomateScript {
   Future<void> _handleIOSUpdateBuild() async {
     try {
       print("Extracting changelog from automate_config.yaml...");
-      final YamlMap? changeLog = _automateConfig.info['changelog'] as YamlMap?;
+      final YamlMap? changeLog = _automateConfig.ios['changelog'] as YamlMap?;
       if (changeLog == null) {
         throw Exception(
           'Changelog required for update mode\nNo changelog found in automate_config.yaml',
