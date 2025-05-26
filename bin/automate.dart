@@ -89,7 +89,7 @@ class AutomateScript {
       final formattedPath =
           Constants.automateConfigFilePath
               .split('/automate/automate_config.yaml')
-              .first;
+              .last;
 
       if (!gitignoreContent.contains(formattedPath)) {
         // Write .gitignore file with new line
