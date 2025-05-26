@@ -81,6 +81,26 @@ class AutomateScript {
       content: Templates.automateReadmeContent,
     );
 
+    // Adding automate_config.yaml in gitignore
+    if (File(Constants.gitignorePath).existsSync()) {
+      print('Adding ${Constants.automateConfigFilePath} to .gitignore...');
+      // Read .gitignore file
+      final gitignoreContent = File(Constants.gitignorePath).readAsStringSync();
+      final formattedPath =
+          Constants.automateConfigFilePath
+              .split('/automate/automate_config.yaml')
+              .first;
+
+      if (!gitignoreContent.contains(formattedPath)) {
+        // Write .gitignore file with new line
+        File(
+          Constants.gitignorePath,
+        ).writeAsStringSync('$gitignoreContent\n$formattedPath');
+      } else {
+        print('automate_config.yaml already added to .gitignore.');
+      }
+    }
+
     // Generate automate_config.yaml
     print(
       'Creating in automate directory ${Constants.automateConfigFilePath}...',
@@ -89,21 +109,6 @@ class AutomateScript {
       Constants.automateConfigFilePath,
       content: Templates.automateConfigContent,
     );
-
-    // Adding automate_config.yaml in gitignore
-    if (File(Constants.gitignorePath).existsSync()) {
-      print('Adding ${Constants.automateConfigFilePath} to .gitignore...');
-      // Read .gitignore file
-      final gitignoreContent = File(Constants.gitignorePath).readAsStringSync();
-      if (!gitignoreContent.contains(Constants.automateConfigFilePath)) {
-        // Write .gitignore file with new line
-        File(Constants.gitignorePath).writeAsStringSync(
-          '$gitignoreContent\n${Constants.automateConfigFilePath}',
-        );
-      } else {
-        print('automate_config.yaml already added to .gitignore.');
-      }
-    }
 
     // Generate app_rating_config.json
     print('Creating in automate directory ${Constants.appRatingConfigPath}...');
