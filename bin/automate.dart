@@ -86,10 +86,7 @@ class AutomateScript {
       print('Adding ${Constants.automateConfigFilePath} to .gitignore...');
       // Read .gitignore file
       final gitignoreContent = File(Constants.gitignorePath).readAsStringSync();
-      final formattedPath =
-          Constants.automateConfigFilePath
-              .split('/automate/automate_config.yaml')
-              .last;
+      const formattedPath = '/automate/automate_config.yaml';
 
       if (!gitignoreContent.contains(formattedPath)) {
         // Write .gitignore file with new line
