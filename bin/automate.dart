@@ -265,16 +265,16 @@ class AutomateScript {
 
   Future<void> _executeBuildFlow() async {
     try {
-      await _runCommand(
-        'flutter',
-        arguments: ['clean'],
-        description: 'Cleaning project',
-      );
-      await _runCommand(
-        'flutter',
-        arguments: ['pub', 'get'],
-        description: 'Fetching dependencies',
-      );
+      // await _runCommand(
+      //   'flutter',
+      //   arguments: ['clean'],
+      //   description: 'Cleaning project',
+      // );
+      // await _runCommand(
+      //   'flutter',
+      //   arguments: ['pub', 'get'],
+      //   description: 'Fetching dependencies',
+      // );
 
       // Increment version only if not android beta
       if (!(platform == AutomatePlatform.android &&
