@@ -83,10 +83,10 @@ class AutomateScript {
 
     // Adding automate_config.yaml in gitignore
     if (File(Constants.gitignorePath).existsSync()) {
-      print('Adding ${Constants.automateConfigFilePath} to .gitignore...');
+      const formattedPath = '/automate/automate_config.yaml';
+      print('Adding $formattedPath to .gitignore...');
       // Read .gitignore file
       final gitignoreContent = File(Constants.gitignorePath).readAsStringSync();
-      const formattedPath = '/automate/automate_config.yaml';
 
       if (!gitignoreContent.contains(formattedPath)) {
         // Write .gitignore file with new line
@@ -94,7 +94,7 @@ class AutomateScript {
           Constants.gitignorePath,
         ).writeAsStringSync('$gitignoreContent\n$formattedPath');
       } else {
-        print('automate_config.yaml already added to .gitignore.');
+        print('$formattedPath already added to .gitignore.');
       }
     }
 
