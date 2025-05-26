@@ -27,12 +27,29 @@ class AutomateConfig {
     return appStoreConfig;
   }
 
+  YamlMap get iosInfo {
+    final iosInfo = ios['info'] as YamlMap?;
+    if (iosInfo == null) {
+      throw Exception('Missing ios.info in automate_config.yaml');
+    }
+    return iosInfo;
+  }
+
+  YamlMap get iosAppReviewInfo {
+    final appReviewInfo = iosInfo['app_review_information'] as YamlMap?;
+    if (appReviewInfo == null) {
+      throw Exception('Missing ios.app_review_info in automate_config.yaml');
+    }
+    return appReviewInfo;
+  }
 
   Future<void> load() async {
     try {
       final configFile = File(Constants.automateConfigFilePath);
       if (!configFile.existsSync()) {
-        throw Exception('automate_config.yaml not found in the automate directory');
+        throw Exception(
+          'automate_config.yaml not found in the automate directory',
+        );
       }
       final configContent = await configFile.readAsString();
       _config = loadYaml(configContent) as YamlMap;

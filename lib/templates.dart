@@ -184,7 +184,7 @@ platform :ios do
   )
   end
 
-  desc "Upload New Build to App Store Connect"
+  desc "Upload App Privacy Details to App Store Connect"
   lane :upload_app_privacy do
           upload_app_privacy_details_to_app_store(
           username: "%username%",

@@ -64,7 +64,7 @@ class AutomateScript {
 
     await _initializeFastlane();
 
-    // await _executeBuildFlow();
+    await _executeBuildFlow();
   }
 
   Future<void> _init() async {
@@ -193,9 +193,8 @@ class AutomateScript {
         await fastlaneDir.create(recursive: true);
       }
 
-      // Extract App Store Connect API key values
       await _createIosFastfile();
-      await _createIosDeliveryFile();
+      // await _createIosDeliveryFile();
 
       print('IOS Fastlane initialized successfully.');
     } catch (e) {
@@ -252,8 +251,6 @@ class AutomateScript {
     final fastfile = File(Constants.iosFastfilePath);
     await fastfile.writeAsString(fastlaneContent);
   }
-
-  Future<void> _createIosDeliveryFile() async {}
 
   Future<void> _initializeAndroidFastlane() async {
     print('Initializing Fastlane for Android...');
@@ -345,7 +342,6 @@ class AutomateScript {
       case AutomatePlatform.all:
         await _uploadToTestFlight();
         await _buildAndroid();
-
         break;
       case AutomatePlatform.ios:
         await _uploadToTestFlight();
@@ -433,60 +429,6 @@ class AutomateScript {
       await deliverFile.writeAsString(content);
       print("Deliverfile updated successfully.");
 
-      /*      // Try to extract metadata path from config if it exists or use default "$_projectDir/fastlane/metadata"
-      print("Trying to extract metadata path from automate_config.yaml...");
-      String? metadataPath = _automateConfig.ios['metadata_path'] as String?;
-      if (metadataPath?.isEmpty ?? true) {
-        print(
-          "No metadata path found in automate_config.yaml, using default path ios/fastlane/metadata....",
-        );
-        metadataPath = '$_projectDir/ios/fastlane/metadata';
-      }
-
-      // Generate metadata directory and its localization files for fastlane
-      final metadataDir = Directory(metadataPath!);
-      if (!metadataDir.existsSync()) {
-        print("Metadata directory not found at $metadataPath, creating...");
-        metadataDir.createSync();
-      }
-
-      // Edit FastFile to Replace %metadata_path% placeholder with real value
-      final fastFile = File('$_projectDir/ios/fastlane/Fastfile');
-      if (!fastFile.existsSync()) {
-        throw Exception('Fastfile not found at $_projectDir/ios/fastlane/Fastfile');
-      }
-      final fastFileContent = await fastFile.readAsString();
-      final newFastFileContent = fastFileContent.replaceAll(
-        '%metadata_path%',
-        metadataPath,
-      );
-      fastFile.writeAsStringSync(newFastFileContent);
-      print("Fastfile updated with metadata path successfully.");
-
-      // Loop through each language
-      for (final language in changeLog.keys) {
-        final languageMetadataDir = Directory('$metadataPath/$language');
-        if (!languageMetadataDir.existsSync()) {
-          print(
-            "Metadata directory not found at $metadataPath/$language, creating...",
-          );
-          languageMetadataDir.createSync();
-        }
-
-        final languageMetadataFile = File(
-          '$metadataPath/$language/release_notes.txt',
-        );
-        if (!languageMetadataFile.existsSync()) {
-          print(
-            "Writing changelog to $metadataPath/$language/release_notes.txt...",
-          );
-          languageMetadataFile.writeAsStringSync(
-            changeLog[language].toString(),
-          );
-        }
-      }
-      print("Metadata generated successfully.");*/
-
       print("Uploading new update to distribution...");
       await _runCommand(
         'fastlane',
@@ -497,6 +439,18 @@ class AutomateScript {
     } on Exception {
       rethrow;
     }
+  }
+
+  Future<void> _createIosDeliveryFile() async {
+    final deliverFile = File(Constants.iosDeliverfilePath);
+    if (!deliverFile.existsSync()) {
+      deliverFile.createSync();
+    }
+
+    final content = await deliverFile.readAsString();
+
+    final iosInfo = AutomateConfig.instance.iosInfo;
+    final iosAppReviewInfo = AutomateConfig.instance.iosAppReviewInfo;
   }
 
   Future<void> _runCommand(
