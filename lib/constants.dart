@@ -4,6 +4,9 @@ class Constants {
   Constants._();
   static final String _projectDir = Directory.current.path;
 
+  //.gitignore
+  static String get gitignorePath => '$_projectDir/.gitignore';
+
   // Directories
   static String get iosDirPath => '$_projectDir/ios';
   static String get androidDirPath => '$_projectDir/android';
@@ -26,6 +29,14 @@ class Constants {
   static String get automateConfigFilePath =>
       '$automateDirPath/automate_config.yaml';
 
+  // Automate Readme
+  static String get automateReadmePath => '$automateDirPath/README.md';
+
   // IOS app_rating_config.json
-  static String get appRatingConfigPath => '$automateDirPath/app_rating_config.json';
+  static String get appRatingConfigPath =>
+      '$automateDirPath/app_rating_config.json';
+
+  // IOS app_privacy_details.json
+  static String get appPrivacyDetailsPath =>
+      '$automateDirPath/app_privacy_details.json';
 }

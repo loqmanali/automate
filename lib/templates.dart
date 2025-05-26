@@ -1,95 +1,12 @@
 class Templates {
   Templates._();
 
-  static const String iosFastFileContent = '''
-# This file contains the fastlane.tools configuration
-# You can find the documentation at https://docs.fastlane.tools
-#
-# For a list of all available actions, check out
-#
-#     https://docs.fastlane.tools/actions
-#
-# For a list of all available plugins, check out
-#
-#     https://docs.fastlane.tools/plugins/available-plugins
-#
-
-# Uncomment the line if you want fastlane to automatically update itself
-# update_fastlane
-
-default_platform(:ios)
-
-platform :ios do
-  before_all do
-    app_store_connect_api_key(
-      key_id: "%key_id%",
-      issuer_id: "%issuer_id%",
-      key_filepath: "%key_filepath%",
-    )
-  end
-
-  desc "Upload New Build to Test Flight"
-  lane :beta do
-    pilot(
-      ipa: "../build/ios/ipa/Banic.ipa",
-      distribute_external: false,
-      notify_external_testers: false,
-      beta_app_description: "",
-      expire_previous_builds: true,
-      groups: "Testers",
-    )
-  end
-
-  desc "Update App With New Build On App Store Connect"
-  lane :new_update do
-    deliver(
-      ipa: "../build/ios/ipa/Banic.ipa",
-      skip_screenshots: true,
-      precheck_include_in_app_purchases: false,
-      submit_for_review: true,
-      automatic_release: true,
-      force: true,
-      submission_information: {
-              export_compliance_uses_encryption: false, # No non-standard encryption
-              export_compliance_contains_proprietary_cryptography: false, # No proprietary cryptography
-              export_compliance_contains_third_party_cryptography: false, # No third-party cryptography
-              export_compliance_is_exempt: true, # Exempt due to standard encryption
-              export_compliance_compliance_required: false, # No additional compliance needed
-              export_compliance_available_on_french_store: false, # Not available in France
-              export_compliance_encryption_updated: false, # No encryption changes
-              export_compliance_platform: "ios",
-              add_id_info_uses_idfa: false # No IDFA usage
-            }
-      )
-  end
-end
-
-''';
-
-  static const String iosAppRatingConfig = '''
-  {
-  "alcoholTobaccoOrDrugUseOrReferences": "NONE",
-  "contests": "NONE",
-  "gamblingSimulated": "NONE",
-  "horrorOrFearThemes": "NONE",
-  "matureOrSuggestiveThemes": "NONE",
-  "medicalOrTreatmentInformation": "NONE",
-  "profanityOrCrudeHumor": "NONE",
-  "sexualContentGraphicAndNudity": "NONE",
-  "sexualContentOrNudity": "NONE",
-  "violenceCartoonOrFantasy": "NONE",
-  "violenceRealisticProlongedGraphicOrSadistic": "NONE",
-  "violenceRealistic": "NONE",
-  "gambling": false,  
-  "seventeenPlus": false,
-  "unrestrictedWebAccess": false
-}
-  ''';
-
   static const String automateConfigContent = '''
   
 ios:
   app_store_connect:
+    username: "(Required)"
+    team_id: "(Required)"
     key_id: "(Required)"
     issuer_id: "(Required)"
     key_filepath: "(Required)"
@@ -172,5 +89,292 @@ ios:
       demo_password: ""
       # (Optional)
       # notes: "Notes"
+  ''';
+
+  static const String iosFastFileContent = '''
+# This file contains the fastlane.tools configuration
+# You can find the documentation at https://docs.fastlane.tools
+#
+# For a list of all available actions, check out
+#
+#     https://docs.fastlane.tools/actions
+#
+# For a list of all available plugins, check out
+#
+#     https://docs.fastlane.tools/plugins/available-plugins
+#
+
+# Uncomment the line if you want fastlane to automatically update itself
+# update_fastlane
+
+default_platform(:ios)
+
+platform :ios do
+  before_all do
+    app_store_connect_api_key(
+      key_id: "%key_id%",
+      issuer_id: "%issuer_id%",
+      key_filepath: "%key_filepath%",
+    )
+  end
+
+  desc "Upload New Build to Test Flight"
+  lane :beta do
+    pilot(
+      ipa: "../build/ios/ipa/Banic.ipa",
+      distribute_external: false,
+      notify_external_testers: false,
+      beta_app_description: "",
+      expire_previous_builds: true,
+      groups: "Testers",
+    )
+  end
+
+  desc "Update App With New Build On App Store Connect"
+  lane :new_update do
+    deliver(
+      ipa: "../build/ios/ipa/Banic.ipa",
+      skip_screenshots: true,
+      precheck_include_in_app_purchases: false,
+      submit_for_review: true,
+      automatic_release: true,
+      force: true,
+      submission_information: {
+              export_compliance_uses_encryption: false, # No non-standard encryption
+              export_compliance_contains_proprietary_cryptography: false, # No proprietary cryptography
+              export_compliance_contains_third_party_cryptography: false, # No third-party cryptography
+              export_compliance_is_exempt: true, # Exempt due to standard encryption
+              export_compliance_compliance_required: false, # No additional compliance needed
+              export_compliance_available_on_french_store: false, # Not available in France
+              export_compliance_encryption_updated: false, # No encryption changes
+              export_compliance_platform: "ios",
+              add_id_info_uses_idfa: false # No IDFA usage
+              content_rights_has_rights: false, # No content rights
+              content_rights_contains_third_party_content: false, # No third-party content
+            }
+      )
+  end
+  
+    
+  desc "Release New App on App Store Connect"
+  lane :release do
+    deliver(
+      ipa: "../build/ios/ipa/Banic.ipa",
+      skip_screenshots: false,
+      screenshots_path: "./fastlane/screenshots",
+      precheck_include_in_app_purchases: false,
+      submit_for_review: true,
+      automatic_release: true,
+      force: true,
+      platform: "ios",
+      app_rating_config_path: "../automate/app_rating_config.json",
+      submission_information: {
+              export_compliance_uses_encryption: false, # No non-standard encryption
+              export_compliance_contains_proprietary_cryptography: false, # No proprietary cryptography
+              export_compliance_contains_third_party_cryptography: false, # No third-party cryptography
+              export_compliance_is_exempt: true, # Exempt due to standard encryption
+              export_compliance_compliance_required: false, # No additional compliance needed
+              export_compliance_available_on_french_store: false, # Not available in France
+              export_compliance_encryption_updated: false, # No encryption changes
+              export_compliance_platform: "ios",
+              content_rights_has_rights: false, # No content rights
+              content_rights_contains_third_party_content: false, # No third-party content
+              add_id_info_uses_idfa: false # No IDFA usage
+      } 
+  )
+  end
+
+  desc "Upload New Build to App Store Connect"
+  lane :upload_app_privacy do
+          upload_app_privacy_details_to_app_store(
+          username: "%username%",
+          team_id: "%team_id%",
+          app_identifier: "%app_identifier%",
+          json_path: "../automate/app_privacy_details.json"
+          )
+  end
+end
+
+''';
+
+  static const String iosAppRatingConfig = '''
+  {
+  "alcoholTobaccoOrDrugUseOrReferences": "NONE",
+  "contests": "NONE",
+  "gamblingSimulated": "NONE",
+  "horrorOrFearThemes": "NONE",
+  "matureOrSuggestiveThemes": "NONE",
+  "medicalOrTreatmentInformation": "NONE",
+  "profanityOrCrudeHumor": "NONE",
+  "sexualContentGraphicAndNudity": "NONE",
+  "sexualContentOrNudity": "NONE",
+  "violenceCartoonOrFantasy": "NONE",
+  "violenceRealisticProlongedGraphicOrSadistic": "NONE",
+  "violenceRealistic": "NONE",
+  "gambling": false,
+  "seventeenPlus": false,
+  "unrestrictedWebAccess": false,
+  "lootBox": false
+}
+  ''';
+
+  static const String iosAppPrivacyDetails = '''
+[
+  {
+    "category": "NAME",
+    "purposes": [
+      "APP_FUNCTIONALITY"
+    ],
+    "data_protections": [
+      "DATA_LINKED_TO_YOU"
+    ]
+  },
+  {
+    "category": "EMAIL_ADDRESS",
+    "purposes": [
+      "APP_FUNCTIONALITY"
+    ],
+    "data_protections": [
+      "DATA_LINKED_TO_YOU"
+    ]
+  }
+]
+  ''';
+
+  static const String automateReadmeContent = '''
+Categories in automate_config.yaml
+#  Available Categories
+#  FOOD_AND_DRINK
+#  BUSINESS
+#  EDUCATION
+#  SOCIAL_NETWORKING
+#  BOOKS
+#  SPORTS
+#  FINANCE
+#  REFERENCE
+#  GRAPHICS_AND_DESIGN
+#  DEVELOPER_TOOLS
+#  HEALTH_AND_FITNESS
+#  MUSIC
+#  WEATHER
+#  TRAVEL
+#  ENTERTAINMENT
+#  STICKERS
+#  GAMES
+#  LIFESTYLE
+#  MEDICAL
+#  MAGAZINES_AND_NEWSPAPERS
+#  UTILITIES
+#  SHOPPING
+#  PRODUCTIVITY
+#  NEWS
+#  PHOTO_AND_VIDEO
+#  NAVIGATION
+
+iOS app rating config json
+// The keys/values on the top allow one of 3 strings:
+// "NONE", "INFREQUENT_OR_MILD" or "FREQUENT_OR_INTENSE",
+// and the items on the bottom allow false or true.
+  {
+  "alcoholTobaccoOrDrugUseOrReferences": "NONE",
+  "contests": "NONE",
+  "gamblingSimulated": "NONE",
+  "horrorOrFearThemes": "NONE",
+  "matureOrSuggestiveThemes": "NONE",
+  "medicalOrTreatmentInformation": "NONE",
+  "profanityOrCrudeHumor": "NONE",
+  "sexualContentGraphicAndNudity": "NONE",
+  "sexualContentOrNudity": "NONE",
+  "violenceCartoonOrFantasy": "NONE",
+  "violenceRealisticProlongedGraphicOrSadistic": "NONE",
+  "violenceRealistic": "NONE",
+  "gambling": false,  
+  "seventeenPlus": false,
+  "unrestrictedWebAccess": false,
+  "lootBox": false
+}
+
+  Example JSON configuration file
+  Below are two examples of the app_privacy_details.json file that upload_app_privacy_details_to_app_store action will create.
+  Not collecting data
+  This is what will be output if your app does not collect any data.
+  [
+  {
+  "data_protections": [
+  "DATA_NOT_COLLECTED"
+  ]
+  }
+  ]
+  Collecting data
+  This is what will be output that matches the example at the top of this page.
+  [
+  {
+  "category": "PAYMENT_INFORMATION",
+  "purposes": [
+  "APP_FUNCTIONALITY"
+  ],
+  "data_protections": [
+  "DATA_NOT_LINKED_TO_YOU"
+  ]
+  },
+  {
+  "category": "NAME",
+  "purposes": [
+  "PRODUCT_PERSONALIZATION",
+  "APP_FUNCTIONALITY"
+  ],
+  "data_protections": [
+  "DATA_LINKED_TO_YOU",
+  "DATA_USED_TO_TRACK_YOU"
+  ]
+  }
+  ]
+  Data Values
+  These are the values you will see in your JSON configuration file. You won't need to ever manually enter these values in your JSON configuration file (as this is what the interactive questionnaire will output for you).
+  Categories
+  * PAYMENT_INFORMATION
+  * CREDIT_AND_FRAUD
+  * OTHER_FINANCIAL_INFO
+  * PRECISE_LOCATION
+  * SENSITIVE_INFO
+  * PHYSICAL_ADDRESS
+  * EMAIL_ADDRESS
+  * NAME
+  * PHONE_NUMBER
+  * OTHER_CONTACT_INFO
+  * CONTACTS
+  * EMAILS_OR_TEXT_MESSAGES
+  * PHOTOS_OR_VIDEOS
+  * AUDIO
+  * GAMEPLAY_CONTENT
+  * CUSTOMER_SUPPORT
+  * OTHER_USER_CONTENT
+  * BROWSING_HISTORY
+  * SEARCH_HISTORY
+  * USER_ID
+  * DEVICE_ID
+  * PURCHASE_HISTORY
+  * PRODUCT_INTERACTION
+  * ADVERTISING_DATA
+  * OTHER_USAGE_DATA
+  * CRASH_DATA
+  * PERFORMANCE_DATA
+  * OTHER_DIAGNOSTIC_DATA
+  * OTHER_DATA
+  * HEALTH
+  * FITNESS
+  * COARSE_LOCATION
+  Purposes
+  * THIRD_PARTY_ADVERTISING
+  * DEVELOPERS_ADVERTISING
+  * ANALYTICS
+  * PRODUCT_PERSONALIZATION
+  * APP_FUNCTIONALITY
+  * OTHER_PURPOSES
+  Data Protections
+  * Uses DATA_LINKED_TO_YOU or DATA_NOT_LINKED_TO_YOU
+  * Optionally uses DATA_USED_TO_TRACK_YOU
+
+
   ''';
 }

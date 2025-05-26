@@ -5,11 +5,11 @@ import 'package:automate/automate_enums.dart';
 import 'package:automate/constants.dart';
 import 'package:automate/templates.dart';
 import 'package:automate/pubspec_utils.dart';
-import 'package:package_info_plus/package_info_plus.dart';
+import 'package:automate/utils.dart';
 import 'package:yaml/yaml.dart';
 
 class AutomateScript {
-  late AutomatePlatform platform;
+  AutomatePlatform platform = AutomatePlatform.all;
   late AutomateMode mode;
   final AutomateConfig _automateConfig = AutomateConfig.instance;
 
@@ -22,20 +22,9 @@ class AutomateScript {
       );
     }
 
-    if (['beta', 'release', 'update'].contains(arguments.first)) {
-      mode = arguments.first.toAutomateMode();
-    } else if (arguments.first == 'init') {
-      //await _init();
-      final packageInfo = await PackageInfo.fromPlatform();
-      print(packageInfo.packageName);
-      exit(0);
-    } else {
-      throw Exception(
-        'Error: Invalid mode "${arguments.first}". Must be one of: beta, release, update.',
-      );
-    }
-
-    final restArguments = arguments.skip(1).toList(); // optional named args
+    final String firstArgument = arguments.first.toLowerCase().trim();
+    final restArguments = arguments.skip(1).toList();
+    // optional named args
 
     final parser =
         ArgParser()..addOption(
@@ -58,15 +47,24 @@ class AutomateScript {
     } else if (args['platform'] == 'android') {
       platform = AutomatePlatform.android;
     }
+    if (['beta', 'release', 'update'].contains(firstArgument)) {
+      mode = firstArgument.toAutomateMode();
+    } else if (firstArgument == 'init') {
+      await _init();
+
+      exit(0);
+    } else {
+      throw Exception(
+        'Error: Invalid mode "${arguments.first}". Must be one of: beta, release, update.',
+      );
+    }
 
     // load automate_config.yaml
     await _automateConfig.load();
 
-    if (!await _isFastlaneInitialized()) {
-      await _initializeFastlane();
-    }
+    await _initializeFastlane();
 
-    await _executeBuildFlow();
+    // await _executeBuildFlow();
   }
 
   Future<void> _init() async {
@@ -76,32 +74,70 @@ class AutomateScript {
     print('Creating ${Constants.automateDirPath}...');
     _createNewDirectory(Constants.automateDirPath);
 
+    //Generate Readme.md
+    print('Creating in automate directory ${Constants.automateReadmePath}...');
+    _writeToFile(
+      Constants.automateReadmePath,
+      content: Templates.automateReadmeContent,
+    );
+
     // Generate automate_config.yaml
     print(
       'Creating in automate directory ${Constants.automateConfigFilePath}...',
     );
-    _createNewFile(Constants.automateConfigFilePath);
-    await File(
+    _writeToFile(
       Constants.automateConfigFilePath,
-    ).writeAsString(Templates.automateConfigContent);
+      content: Templates.automateConfigContent,
+    );
+
+    // Adding automate_config.yaml in gitignore
+    if (File(Constants.gitignorePath).existsSync()) {
+      print('Adding ${Constants.automateConfigFilePath} to .gitignore...');
+      // Read .gitignore file
+      final gitignoreContent = File(Constants.gitignorePath).readAsStringSync();
+      if (!gitignoreContent.contains(Constants.automateConfigFilePath)) {
+        // Write .gitignore file with new line
+        File(Constants.gitignorePath).writeAsStringSync(
+          '$gitignoreContent\n${Constants.automateConfigFilePath}',
+        );
+      } else {
+        print('automate_config.yaml already added to .gitignore.');
+      }
+    }
 
     // Generate app_rating_config.json
     print('Creating in automate directory ${Constants.appRatingConfigPath}...');
-    _createNewFile(Constants.appRatingConfigPath);
-    await File(
+    _writeToFile(
       Constants.appRatingConfigPath,
-    ).writeAsString(Templates.iosAppRatingConfig);
+      content: Templates.iosAppRatingConfig,
+    );
+
+    // Generate app_privacy_details.json
+    print(
+      'Creating in automate directory ${Constants.appPrivacyDetailsPath}...',
+    );
+    _writeToFile(
+      Constants.appPrivacyDetailsPath,
+      content: Templates.iosAppPrivacyDetails,
+    );
   }
 
   void _createNewDirectory(String path) {
     if (!Directory(path).existsSync()) {
       Directory(path).createSync();
+    } else {
+      print('Directory ${Constants.automateDirPath} already exists.');
     }
   }
 
-  void _createNewFile(String path) {
+  void _writeToFile(String path, {String? content}) {
     if (!File(path).existsSync()) {
       File(path).createSync();
+      if (content != null) {
+        File(path).writeAsStringSync(content);
+      }
+    } else {
+      print('File $path already exists.');
     }
   }
 
@@ -122,6 +158,10 @@ class AutomateScript {
   }
 
   Future<void> _initializeFastlane() async {
+    if (await _isFastlaneInitialized()) {
+      print('Fastlane already initialized.');
+      return;
+    }
     print('Initializing Fastlane...');
     if (platform == AutomatePlatform.all) {
       await _initializeIosFastlane();
@@ -152,43 +192,66 @@ class AutomateScript {
       }
 
       // Extract App Store Connect API key values
-      final appStoreConfig = _automateConfig.appStoreConfig;
+      await _createIosFastfile();
+      await _createIosDeliveryFile();
 
-      final keyId = appStoreConfig['key_id']?.toString();
-      final issuerId = appStoreConfig['issuer_id']?.toString();
-      final keyFilepath = appStoreConfig['key_filepath']?.toString();
-      if (keyId == null || issuerId == null || keyFilepath == null) {
-        throw Exception(
-          'Missing key_id, issuer_id, or key_filepath in automate_config.yaml',
-        );
-      }
-
-      // Define Fastlane configuration for iOS
-      const fastlaneTemplate = Templates.iosFastFileContent;
-
-      // Check for placeholder if key_id, issuer_id, or key_filepath is missing
-      if (!fastlaneTemplate.contains('%key_id%') &&
-          !fastlaneTemplate.contains('%issuer_id%') &&
-          !fastlaneTemplate.contains('%key_filepath%')) {
-        throw Exception(
-          'Error: Missing key_id, issuer_id, or key_filepath in Fastlane template Must be all of: %key_id%, %issuer_id%, %key_filepath% existing in Fastlane template as placeholders',
-        );
-      }
-
-      // Replace placeholders with config values
-      final fastlaneContent = fastlaneTemplate
-          .replaceAll('%key_id%', keyId)
-          .replaceAll('%issuer_id%', issuerId)
-          .replaceAll('%key_filepath%', keyFilepath);
-
-      // Write Fastfile for iOS
-      final fastfile = File(Constants.iosFastfilePath);
-      await fastfile.writeAsString(fastlaneContent);
       print('IOS Fastlane initialized successfully.');
     } catch (e) {
       throw Exception('Failed to initialize iOS Fastlane: $e');
     }
   }
+
+  Future<void> _createIosFastfile() async {
+    // Extract App Store Connect API key values
+    final appStoreConfig = _automateConfig.appStoreConfig;
+
+    final keyId = appStoreConfig['key_id']?.toString();
+    final issuerId = appStoreConfig['issuer_id']?.toString();
+    final keyFilepath = appStoreConfig['key_filepath']?.toString();
+    final username = appStoreConfig['username']?.toString();
+    final teamId = appStoreConfig['team_id']?.toString();
+    if (keyId == null ||
+        issuerId == null ||
+        keyFilepath == null ||
+        username == null ||
+        teamId == null) {
+      throw Exception(
+        'Missing key_id, issuer_id, username, team_id or key_filepath in automate_config.yaml',
+      );
+    }
+
+    final appIdentifier = await Utils.getIosBundleId;
+
+    // Define Fastlane configuration for iOS
+    const fastlaneTemplate = Templates.iosFastFileContent;
+
+    // Check for placeholder if key_id, issuer_id, or key_filepath is missing
+    if (!fastlaneTemplate.contains('%key_id%') &&
+        !fastlaneTemplate.contains('%issuer_id%') &&
+        !fastlaneTemplate.contains('%key_filepath%') &&
+        !fastlaneTemplate.contains('%username%') &&
+        !fastlaneTemplate.contains('%team_id%') &&
+        !fastlaneTemplate.contains('%app_identifier%')) {
+      throw Exception(
+        'Error: Missing key_id, issuer_id, app_identifier, username, team_id or key_filepath in Fastlane template Must be all of: %key_id%, %issuer_id%, %key_filepath%, %app_identifier%, %team_id% or %username% existing in Fastlane template as placeholders',
+      );
+    }
+
+    // Replace placeholders with config values
+    final fastlaneContent = fastlaneTemplate
+        .replaceAll('%key_id%', keyId)
+        .replaceAll('%issuer_id%', issuerId)
+        .replaceAll('%key_filepath%', keyFilepath)
+        .replaceAll('%username%', username)
+        .replaceAll('%team_id%', teamId)
+        .replaceAll('%app_identifier%', appIdentifier);
+
+    // Write Fastfile for iOS
+    final fastfile = File(Constants.iosFastfilePath);
+    await fastfile.writeAsString(fastlaneContent);
+  }
+
+  Future<void> _createIosDeliveryFile() async {}
 
   Future<void> _initializeAndroidFastlane() async {
     print('Initializing Fastlane for Android...');
@@ -368,7 +431,7 @@ class AutomateScript {
       await deliverFile.writeAsString(content);
       print("Deliverfile updated successfully.");
 
-      /*      // Try to extract metadata path from config if it exists or use default "$_projectDir/ios/fastlane/metadata"
+      /*      // Try to extract metadata path from config if it exists or use default "$_projectDir/fastlane/metadata"
       print("Trying to extract metadata path from automate_config.yaml...");
       String? metadataPath = _automateConfig.ios['metadata_path'] as String?;
       if (metadataPath?.isEmpty ?? true) {
