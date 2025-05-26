@@ -279,7 +279,7 @@ class AutomateScript {
       // Increment version only if not android beta
       if (!(platform == AutomatePlatform.android &&
           mode == AutomateMode.beta)) {
-        await PubspecUtils.incrementVersion();
+        //   await PubspecUtils.incrementVersion();
       }
 
       // Build Process
@@ -289,7 +289,7 @@ class AutomateScript {
           await _buildIOS();
           break;
         case AutomatePlatform.ios:
-          await _buildIOS();
+          //await _buildIOS();
           break;
         case AutomatePlatform.android:
           await _buildAndroid();
