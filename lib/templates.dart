@@ -2,7 +2,7 @@ class Templates {
   Templates._();
 
   static const String automateConfigContent = '''
-  
+
 ios:
   app_store_connect:
     username: "(Required)"
@@ -19,65 +19,67 @@ ios:
 
   info:
     # ----- Localized Information -----
-    # (Required)
-    name:
-      en-US: ""
-      # ar-SA: ""
-    description:
-      en-US: >
-        This is Example of Multiline Description
-        You can use copy your description
-        and paste it here.
-      # ar-SA: >
-        # هذا مثال على وصف متعدد الأسطر
-        # يمكنك استخدام نسخ ولصق وصفك
+    
+    localized:
+      # (Required)
+      name:
+        en-US: ""
+        # ar-SA: ""
+      description:
+        en-US: >
+          This is Example of Multiline Description
+          You can use copy your description
+          and paste it here.
+          # ar-SA: >
+          # هذا مثال على وصف متعدد الأسطر
+          # يمكنك استخدام نسخ ولصق وصفك
         # هنا.
-
-    privacy_url:
-      en-US: ""
-      # ar-SA: ""
-    keywords:
-      en-US: ""
-      # ar-SA: ""
-    subtitle:
-      en-US: ""
-      # ar-SA: ""
-    support_url:
-      en-US: ""
-      # ar-SA: ""
-
-    # (Optional)
-    # Uncomment the variables you need
-    # promotional_text:
-      # en-US: ""
-      # ar-SA: ""
-    # marketing_url:
-      # en-US: ""
-      # ar-SA: ""
-    # apple_tv_privacy:
-      # en-US: ""
-      # ar-SA: ""
-
+  
+      privacy_url:
+        en-US: ""
+        # ar-SA: ""
+      keywords:
+        en-US: ""
+        # ar-SA: ""
+      subtitle:
+        en-US: ""
+        # ar-SA: ""
+      support_url:
+        en-US: ""
+        # ar-SA: ""
+        
+        # (Optional)
+        # Uncomment the variables you need
+        # promotional_text:
+        # en-US: ""
+        # ar-SA: ""
+        # marketing_url:
+        # en-US: ""
+        # ar-SA: ""
+        # apple_tv_privacy:
+        # en-US: ""
+        # ar-SA: ""
+  
 
     # ----- UnLocalized Information -----
-
-    # (Required)
-    copyright: ""
-    
-    # Take a look at README.md in automate Directory
-    # To see the category codes
-    # (Required)
-    primary_category: ""
-
-    # (Optional)
-    # Uncomment the variables you need
-    # secondary_category: ""
-    # primary_first_sub_category: ""
-    # primary_second_sub_category: ""
-    # secondary_first_sub_category: ""
-    # secondary_second_sub_category: ""
-
-
+    unlocalized:
+      # (Required)
+      copyright: ""
+      
+      # Take a look at README.md in automate Directory
+      # To see the category codes
+      # (Required)
+      primary_category: ""
+  
+      # (Optional)
+      # Uncomment the variables you need
+      # secondary_category: ""
+      # primary_first_sub_category: ""
+      # primary_second_sub_category: ""
+      # secondary_first_sub_category: ""
+      # secondary_second_sub_category: ""
+  
+  
 
     app_review_information:
       # (Required)
@@ -148,9 +150,9 @@ platform :ios do
               export_compliance_available_on_french_store: false, # Not available in France
               export_compliance_encryption_updated: false, # No encryption changes
               export_compliance_platform: "ios",
-              add_id_info_uses_idfa: false # No IDFA usage
+              add_id_info_uses_idfa: false, # No IDFA usage
               content_rights_has_rights: false, # No content rights
-              content_rights_contains_third_party_content: false, # No third-party content
+              content_rights_contains_third_party_content: false # No third-party content
             }
       )
   end

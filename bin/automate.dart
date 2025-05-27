@@ -194,7 +194,6 @@ class AutomateScript {
       }
 
       await _createIosFastfile();
-      // await _createIosDeliveryFile();
 
       print('IOS Fastlane initialized successfully.');
     } catch (e) {
@@ -252,6 +251,98 @@ class AutomateScript {
     await fastfile.writeAsString(fastlaneContent);
   }
 
+  Future<void> _createIosDeliveryFile() async {
+    try {
+      print("Generating Deliverfile from automate_config.yaml...");
+
+      // Extract ios section from YAML
+      final iosConfig = _automateConfig.ios;
+
+      // Extract localized, unlocalized, and app review information
+      final localizedInfo = iosConfig['info']['localized'] as YamlMap?;
+      final unlocalizedInfo = iosConfig['info']['unlocalized'] as YamlMap?;
+      final appReviewInfo =
+          iosConfig['info']['app_review_information'] as YamlMap?;
+
+      if (localizedInfo == null ||
+          unlocalizedInfo == null ||
+          appReviewInfo == null) {
+        throw Exception('Missing required sections in ios configuration');
+      }
+
+      // Create or open Deliverfile
+      final deliverFile = File(Constants.iosDeliverfilePath);
+      if (!deliverFile.existsSync()) {
+        deliverFile.createSync(recursive: true);
+        print("Deliverfile created at ${Constants.iosDeliverfilePath}");
+      }
+
+      // Build Deliverfile content
+      final buffer = StringBuffer();
+      buffer.writeln(
+        '# The Deliverfile allows you to store various App Store Connect metadata',
+      );
+      buffer.writeln('# For more information, check out the docs');
+      buffer.writeln('# https://docs.fastlane.tools/actions/deliver/');
+      buffer.writeln();
+
+      // App Review Information
+      buffer.writeln('app_review_information(');
+      for (final entry in appReviewInfo.entries) {
+        final key = entry.key as String;
+        final value = entry.value as String;
+        buffer.writeln('  $key: "$value",');
+      }
+      buffer.writeln(')');
+      buffer.writeln();
+
+      // Localized Fields
+      for (final fieldEntry in localizedInfo.entries) {
+        final fieldName = fieldEntry.key as String;
+        final fieldData = fieldEntry.value as YamlMap;
+
+        buffer.writeln('$fieldName(');
+        if (fieldName != 'subtitle') {
+          buffer.writeln('{');
+        }
+        for (final localeEntry in fieldData.entries) {
+          final locale = localeEntry.key as String;
+          final value = (localeEntry.value as String)
+              .replaceAll('"', r'\"')
+              .replaceAll('\n', r'\n');
+
+          buffer.writeln('  "$locale" => "$value",');
+        }
+        if (fieldName != 'subtitle') {
+          buffer.writeln('}');
+        }
+        buffer.writeln(')');
+        buffer.writeln();
+      }
+
+      // Unlocalized Fields
+      for (final entry in unlocalizedInfo.entries) {
+        final key = entry.key as String;
+        final value = entry.value as String;
+        if (key == 'copyright') {
+          buffer.writeln('$key("#{Time.now.year} $value")');
+        } else {
+          buffer.writeln('$key("$value")');
+        }
+        buffer.writeln();
+      }
+
+      // Write content to Deliverfile
+      await deliverFile.writeAsString(buffer.toString());
+      buffer.clear();
+      print(
+        "Deliverfile generated successfully at ${Constants.iosDeliverfilePath}",
+      );
+    } catch (e) {
+      throw Exception('Failed to generate Deliverfile: $e');
+    }
+  }
+
   Future<void> _initializeAndroidFastlane() async {
     print('Initializing Fastlane for Android...');
     // Check if android directory exists
@@ -265,21 +356,21 @@ class AutomateScript {
 
   Future<void> _executeBuildFlow() async {
     try {
-      // await _runCommand(
-      //   'flutter',
-      //   arguments: ['clean'],
-      //   description: 'Cleaning project',
-      // );
-      // await _runCommand(
-      //   'flutter',
-      //   arguments: ['pub', 'get'],
-      //   description: 'Fetching dependencies',
-      // );
+      await _runCommand(
+        'flutter',
+        arguments: ['clean'],
+        description: 'Cleaning project',
+      );
+      await _runCommand(
+        'flutter',
+        arguments: ['pub', 'get'],
+        description: 'Fetching dependencies',
+      );
 
       // Increment version only if not android beta
       if (!(platform == AutomatePlatform.android &&
           mode == AutomateMode.beta)) {
-        //   await PubspecUtils.incrementVersion();
+        await PubspecUtils.incrementVersion();
       }
 
       // Build Process
@@ -289,7 +380,7 @@ class AutomateScript {
           await _buildIOS();
           break;
         case AutomatePlatform.ios:
-          //await _buildIOS();
+          await _buildIOS();
           break;
         case AutomatePlatform.android:
           await _buildAndroid();
@@ -302,7 +393,7 @@ class AutomateScript {
           await _handleBetaBuild();
           break;
         case AutomateMode.release:
-          // await _handleReleaseBuild();
+          await _handleReleaseBuild();
           break;
         case AutomateMode.update:
           await _handleUpdateBuild();
@@ -376,6 +467,21 @@ class AutomateScript {
     }
   }
 
+  Future<void> _handleReleaseBuild() async {
+    switch (platform) {
+      case AutomatePlatform.all:
+        await _handleIOSReleaseBuild();
+        //await _handleAndroidReleaseBuild();
+        break;
+      case AutomatePlatform.ios:
+        await _handleIOSReleaseBuild();
+        break;
+      case AutomatePlatform.android:
+        //await _handleAndroidReleaseBuild();
+        break;
+    }
+  }
+
   Future<void> _handleIOSUpdateBuild() async {
     try {
       print("Extracting changelog from automate_config.yaml...");
@@ -386,17 +492,6 @@ class AutomateScript {
         );
       }
       print("Changelog extracted successfully.");
-
-      //Prepare changelog for Deliverfile
-      final buffer = StringBuffer('\nrelease_notes({');
-      for (final locale in changeLog.keys) {
-        final message = changeLog[locale] as String;
-        final escapedMessage = message.replaceAll('"', r'\"')
-          ..replaceAll('\n', r'\n');
-        buffer.writeln("  '$locale' => \"$escapedMessage\",");
-      }
-      buffer.write('})');
-      final releaseNotesContent = buffer.toString();
 
       // Check if Deliverfile exists
       final deliverFile = File(Constants.iosDeliverfilePath);
@@ -409,6 +504,17 @@ class AutomateScript {
 
       // Read Deliverfile content
       String content = await deliverFile.readAsString();
+
+      //Prepare changelog for Deliverfile
+      final buffer = StringBuffer('\nrelease_notes({');
+      for (final locale in changeLog.keys) {
+        final message = changeLog[locale] as String;
+        final escapedMessage = message.replaceAll('"', r'\"')
+          ..replaceAll('\n', r'\n');
+        buffer.writeln("  '$locale' => \"$escapedMessage\",");
+      }
+      buffer.write('})');
+      final releaseNotesContent = buffer.toString();
 
       final releaseNotesPattern = RegExp(
         r'release_notes\s*\(\s*\{[^}]*\}\s*\)',
@@ -441,16 +547,49 @@ class AutomateScript {
     }
   }
 
-  Future<void> _createIosDeliveryFile() async {
-    final deliverFile = File(Constants.iosDeliverfilePath);
-    if (!deliverFile.existsSync()) {
-      deliverFile.createSync();
+  Future<void> _handleIOSReleaseBuild() async {
+    try {
+      await _createIosDeliveryFile();
+
+      print("Uploading new release to distribution...");
+      await _runCommand(
+        'fastlane',
+        arguments: ['release'],
+        description: 'Uploading new release to distribution',
+        workingDir: 'ios',
+      );
+
+      print("Release uploaded successfully!.");
+      print("-----------------------------------");
+
+      await _uploadIosAppPrivacy();
+    } on Exception {
+      rethrow;
     }
+  }
 
-    final content = await deliverFile.readAsString();
-
-    final iosInfo = AutomateConfig.instance.iosInfo;
-    final iosAppReviewInfo = AutomateConfig.instance.iosAppReviewInfo;
+  Future<void> _uploadIosAppPrivacy() async {
+    print("Trying to upload the app privacy details...");
+    print("It may fails if it is the first time you are uploading a release.");
+    print(
+      "Because the uploading of the app privacy details require interactive from you to login in app store connect.",
+    );
+    print(
+      "If it fails, please run this command 'fastlane upload_app_privacy' in your terminal in ios directory.",
+    );
+    try {
+      await _runCommand(
+        'fastlane',
+        arguments: ['app_privacy_details'],
+        description: 'Uploading app privacy details',
+        workingDir: 'ios',
+      );
+    } on Exception catch (e) {
+      print("Error uploading app privacy details: $e");
+      throw Exception(
+        "Try to run this command 'fastlane upload_app_privacy' in your terminal in ios directory.",
+      );
+    }
   }
 
   Future<void> _runCommand(
