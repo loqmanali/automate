@@ -122,6 +122,27 @@ class AutomateScript {
       Constants.appPrivacyDetailsPath,
       content: Templates.iosAppPrivacyDetails,
     );
+
+    // Create screenshots directory in IOS
+
+    if (platform == AutomatePlatform.ios || platform == AutomatePlatform.all) {
+      final fastlaneDir = Directory(Constants.iosFastlaneDirPath);
+      if (!fastlaneDir.existsSync()) {
+        await fastlaneDir.create(recursive: true);
+      }
+      final screenshotsDir = Directory(
+        '${Constants.iosFastlaneDirPath}/screenshots',
+      );
+      if (!screenshotsDir.existsSync()) {
+        await screenshotsDir.create(recursive: true);
+        final enLangDir = Directory(
+          '${Constants.iosFastlaneDirPath}/screenshots/en-US',
+        );
+        if (!enLangDir.existsSync()) {
+          await enLangDir.create(recursive: true);
+        }
+      }
+    }
   }
 
   void _createNewDirectory(String path) {
