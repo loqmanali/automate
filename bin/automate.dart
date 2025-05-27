@@ -172,19 +172,15 @@ class AutomateScript {
     );
 
     if (platform == AutomatePlatform.ios) {
-      return Directory(Constants.iosFastlaneDirPath).existsSync();
+      return File(Constants.iosFastfilePath).existsSync();
     } else if (platform == AutomatePlatform.android) {
-      return Directory(Constants.androidFastlaneDirPath).existsSync();
+      return File(Constants.androidFastfilePath).existsSync();
     }
-    return Directory(Constants.iosFastlaneDirPath).existsSync() &&
-        Directory(Constants.androidFastlaneDirPath).existsSync();
+    return File(Constants.iosFastfilePath).existsSync() &&
+        File(Constants.androidFastfilePath).existsSync();
   }
 
   Future<void> _initializeFastlane() async {
-    if (await _isFastlaneInitialized()) {
-      print('Fastlane already initialized.');
-      return;
-    }
     print('Initializing Fastlane...');
     if (platform == AutomatePlatform.all) {
       await _initializeIosFastlane();
