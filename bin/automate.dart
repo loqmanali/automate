@@ -597,7 +597,7 @@ class AutomateScript {
     try {
       await _runCommand(
         'fastlane',
-        arguments: ['app_privacy_details'],
+        arguments: ['upload_app_privacy'],
         description: 'Uploading app privacy details',
         workingDir: 'ios',
       );
