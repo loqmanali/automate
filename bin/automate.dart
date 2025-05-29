@@ -689,16 +689,6 @@ class AutomateScript {
         final escapedMessage = message.replaceAll('"', r'\"')
           ..replaceAll('\n', r'\n');
         final changelogDirPath = "$metadataDir/android/$locale/changelogs";
-        final changelogsDir = Directory(changelogDirPath);
-
-        if (!changelogsDir.existsSync()) {
-          changelogsDir.createSync(recursive: true);
-        } else {
-          // remove old changelogs in changelogsDir
-          changelogsDir.listSync().forEach((file) {
-            file.deleteSync();
-          });
-        }
 
         final changelogFile = File("$changelogDirPath/$versionCode.txt");
         if (!changelogFile.existsSync()) {
