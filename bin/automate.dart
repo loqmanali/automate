@@ -688,7 +688,9 @@ class AutomateScript {
         final message = changeLog[locale] as String;
         final escapedMessage = message.replaceAll('"', r'\"')
           ..replaceAll('\n', r'\n');
-        final changelogDirPath = "$metadataDir/android/$locale/changelogs";
+
+        final changelogDirPath =
+            "${metadataDir.path}/android/$locale/changelogs";
         final changelogsDir = Directory(changelogDirPath);
 
         if (!changelogsDir.existsSync()) {
