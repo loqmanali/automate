@@ -18,6 +18,9 @@ class PubspecUtils {
     print('Incremented version to $newVersion, build number to $buildNumber');
   }
 
+  static Future<String> get appVersion async =>
+      (await _readPubspec())['version'].toString();
+
   static Future<YamlMap> _readPubspec() async {
     final file = File('$_projectDir/pubspec.yaml');
     if (!file.existsSync()) {

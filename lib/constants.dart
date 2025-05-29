@@ -15,6 +15,9 @@ class Constants {
   static String get iosFastlaneDirPath => '$iosDirPath/fastlane';
   static String get androidFastlaneDirPath => '$androidDirPath/fastlane';
 
+  static String get androidFastlaneMetadataDirPath =>
+      '$androidFastlaneDirPath/metadata';
+
   // Fastfile
   static String get androidFastfilePath => '$androidFastlaneDirPath/Fastfile';
   static String get iosFastfilePath => '$iosFastlaneDirPath/Fastfile';

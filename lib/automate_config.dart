@@ -43,6 +43,14 @@ class AutomateConfig {
     return appReviewInfo;
   }
 
+  YamlMap get android {
+    final android = _config['android'] as YamlMap?;
+    if (android == null) {
+      throw Exception('Missing android in automate_config.yaml');
+    }
+    return android;
+  }
+
   Future<void> load() async {
     try {
       final configFile = File(Constants.automateConfigFilePath);

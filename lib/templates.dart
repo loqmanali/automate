@@ -2,16 +2,21 @@ class Templates {
   Templates._();
 
   static const String automateConfigContent = '''
-
+android:
+    json_key_path: "(Required)"
+    
+  # (Required for update)
+  # Changelog is the Release Notes used only in automate update mode
+    changelog :
+        en-US: ""
+        # ar: ""
 ios:
   app_store_connect:
-    username: "(Required)"
-    team_id: "(Required)"
     key_id: "(Required)"
     issuer_id: "(Required)"
     key_filepath: "(Required)"
 
-  # (Required) for automate update mode
+  # (Required for update)
   # Changelog is the Release Notes used only in automate update mode
   changelog :
     en-US: ""
@@ -21,7 +26,7 @@ ios:
     # ----- Localized Information -----
     
     localized:
-      # (Required)
+      # (Required For Release)
       name:
         en-US: ""
         # ar-SA: ""
@@ -63,7 +68,7 @@ ios:
 
     # ----- UnLocalized Information -----
     unlocalized:
-      # (Required)
+      # (Required for release)
       copyright: ""
       
       # Take a look at README.md in automate Directory
@@ -82,7 +87,7 @@ ios:
   
 
     app_review_information:
-      # (Required)
+      # (Required for release)
       first_name: ""
       last_name: ""
       email_address: ""
@@ -189,8 +194,6 @@ platform :ios do
   desc "Upload App Privacy Details to App Store Connect"
   lane :upload_app_privacy do
           upload_app_privacy_details_to_app_store(
-          username: "%username%",
-          team_id: "%team_id%",
           app_identifier: "%app_identifier%",
           json_path: "../automate/app_privacy_details.json"
           )
@@ -198,6 +201,38 @@ platform :ios do
 end
 
 ''';
+
+  static const String androidFastFileContent = '''
+  # This file contains the fastlane.tools configuration
+# You can find the documentation at https://docs.fastlane.tools
+#
+# For a list of all available actions, check out
+#
+#     https://docs.fastlane.tools/actions
+#
+# For a list of all available plugins, check out
+#
+#     https://docs.fastlane.tools/plugins/available-plugins
+#
+
+# Uncomment the line if you want fastlane to automatically update itself
+# update_fastlane
+
+default_platform(:android)
+
+platform :android do
+  desc "Deploy a new version to the Google Play"
+  lane :new_update do
+  supply(
+    package_name: "%package_name%",
+    json_key: "%json_key_path%",
+    aab: "../build/app/outputs/bundle/release/app-release.aab",
+    mapping: "../build/app/outputs/mapping/release/mapping.txt",
+  )
+  end
+end
+
+  ''';
 
   static const String iosAppRatingConfig = '''
   {

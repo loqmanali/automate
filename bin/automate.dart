@@ -48,6 +48,11 @@ class AutomateScript {
       platform = AutomatePlatform.android;
     }
     if (['beta', 'release', 'update'].contains(firstArgument)) {
+      if (firstArgument == 'release' && platform == AutomatePlatform.android) {
+        throw Exception(
+          'Error: Release build is not supported for Android platform.',
+        );
+      }
       mode = firstArgument.toAutomateMode();
     } else if (firstArgument == 'init') {
       await _init();
@@ -164,24 +169,26 @@ class AutomateScript {
     }
   }
 
-  Future<bool> _isFastlaneInitialized() async {
-    await _runCommand(
-      "fastlane",
-      arguments: ["--version"],
-      description: "Fastlane version",
-    );
-
-    if (platform == AutomatePlatform.ios) {
-      return File(Constants.iosFastfilePath).existsSync();
-    } else if (platform == AutomatePlatform.android) {
-      return File(Constants.androidFastfilePath).existsSync();
+  Future<bool> _isFastlaneInstalled() async {
+    try {
+      await _runCommand(
+        "fastlane",
+        arguments: ["--version"],
+        description: "Fastlane version",
+      );
+      return true;
+    } catch (e) {
+      return false;
     }
-    return File(Constants.iosFastfilePath).existsSync() &&
-        File(Constants.androidFastfilePath).existsSync();
   }
 
   Future<void> _initializeFastlane() async {
     print('Initializing Fastlane...');
+    if (!await _isFastlaneInstalled()) {
+      throw Exception(
+        'Error: Fastlane is not installed. Please install fastlane and try again.',
+      );
+    }
     if (platform == AutomatePlatform.all) {
       await _initializeIosFastlane();
       await _initializeAndroidFastlane();
@@ -218,54 +225,108 @@ class AutomateScript {
     }
   }
 
+  Future<void> _initializeAndroidFastlane() async {
+    print('Initializing Fastlane for Android...');
+    // Check if android directory exists
+    try {
+      final androidDir = Directory(Constants.androidDirPath);
+      if (!androidDir.existsSync()) {
+        throw Exception(
+          'Android directory not found at ${Constants.androidDirPath}. Ensure this is a valid Flutter project with an Android module.',
+        );
+      }
+
+      // Ensure fastlane directory exists
+      final fastlaneDir = Directory(Constants.androidFastlaneDirPath);
+      if (!fastlaneDir.existsSync()) {
+        await fastlaneDir.create(recursive: true);
+      }
+
+      await _createAndroidFastfile();
+
+      print('Android Fastlane initialized successfully.');
+    } on Exception catch (e) {
+      throw Exception('Failed to initialize Android Fastlane: $e');
+    }
+  }
+
   Future<void> _createIosFastfile() async {
     // Extract App Store Connect API key values
-    final appStoreConfig = _automateConfig.appStoreConfig;
+    try {
+      final appStoreConfig = _automateConfig.appStoreConfig;
 
-    final keyId = appStoreConfig['key_id']?.toString();
-    final issuerId = appStoreConfig['issuer_id']?.toString();
-    final keyFilepath = appStoreConfig['key_filepath']?.toString();
-    final username = appStoreConfig['username']?.toString();
-    final teamId = appStoreConfig['team_id']?.toString();
-    if (keyId == null ||
-        issuerId == null ||
-        keyFilepath == null ||
-        username == null ||
-        teamId == null) {
-      throw Exception(
-        'Missing key_id, issuer_id, username, team_id or key_filepath in automate_config.yaml',
-      );
+      final keyId = appStoreConfig['key_id']?.toString();
+      final issuerId = appStoreConfig['issuer_id']?.toString();
+      final keyFilepath = appStoreConfig['key_filepath']?.toString();
+
+      if ((keyId?.isEmpty ?? true) ||
+          (issuerId?.isEmpty ?? true) ||
+          (keyFilepath?.isEmpty ?? true)) {
+        throw Exception(
+          'Missing key_id, issuer_id, or key_filepath in automate_config.yaml',
+        );
+      }
+
+      final appIdentifier = await Utils.iosBundleId;
+
+      // Define Fastlane configuration for iOS
+      const fastlaneTemplate = Templates.iosFastFileContent;
+
+      // Check for placeholder if key_id, issuer_id, or key_filepath is missing
+      if (!fastlaneTemplate.contains('%key_id%') &&
+          !fastlaneTemplate.contains('%issuer_id%') &&
+          !fastlaneTemplate.contains('%key_filepath%') &&
+          !fastlaneTemplate.contains('%app_identifier%')) {
+        throw Exception(
+          'Error: Missing key_id, issuer_id, app_identifier, or key_filepath in Fastlane template Must be all of: %key_id%, %issuer_id%, %key_filepath%, %app_identifier%, %team_id% or %username% existing in Fastlane template as placeholders',
+        );
+      }
+
+      // Replace placeholders with config values
+      final fastlaneContent = fastlaneTemplate
+          .replaceAll('%key_id%', keyId!)
+          .replaceAll('%issuer_id%', issuerId!)
+          .replaceAll('%key_filepath%', keyFilepath!)
+          .replaceAll('%app_identifier%', appIdentifier);
+
+      // Write Fastfile for iOS
+      final fastfile = File(Constants.iosFastfilePath);
+      await fastfile.writeAsString(fastlaneContent);
+    } on Exception {
+      rethrow;
     }
+  }
 
-    final appIdentifier = await Utils.getIosBundleId;
+  Future<void> _createAndroidFastfile() async {
+    try {
+      print("Generating Fastfile from automate_config.yaml...");
 
-    // Define Fastlane configuration for iOS
-    const fastlaneTemplate = Templates.iosFastFileContent;
+      // Extract android section from YAML
+      final androidConfig = _automateConfig.android;
 
-    // Check for placeholder if key_id, issuer_id, or key_filepath is missing
-    if (!fastlaneTemplate.contains('%key_id%') &&
-        !fastlaneTemplate.contains('%issuer_id%') &&
-        !fastlaneTemplate.contains('%key_filepath%') &&
-        !fastlaneTemplate.contains('%username%') &&
-        !fastlaneTemplate.contains('%team_id%') &&
-        !fastlaneTemplate.contains('%app_identifier%')) {
-      throw Exception(
-        'Error: Missing key_id, issuer_id, app_identifier, username, team_id or key_filepath in Fastlane template Must be all of: %key_id%, %issuer_id%, %key_filepath%, %app_identifier%, %team_id% or %username% existing in Fastlane template as placeholders',
-      );
+      final jsonKeyPath = androidConfig['json_key_path']?.toString();
+      final packageName = await Utils.androidPackageName;
+
+      if (jsonKeyPath?.isEmpty ?? true) {
+        throw Exception('Missing json_key_path in automate_config.yaml');
+      }
+
+      // Define Fastlane configuration for Android
+      const fastlaneTemplate = Templates.androidFastFileContent;
+
+      // Replace placeholders with config values
+      final fastlaneContent = fastlaneTemplate
+          .replaceAll('%json_key_path%', jsonKeyPath!)
+          .replaceAll('%package_name%', packageName);
+
+      // Write Fastfile for Android
+      final fastfile = File(Constants.androidFastfilePath);
+      await fastfile.writeAsString(fastlaneContent);
+
+      print("Fastfile created at ${Constants.androidFastfilePath}");
+    } on Exception {
+      rethrow;
     }
-
-    // Replace placeholders with config values
-    final fastlaneContent = fastlaneTemplate
-        .replaceAll('%key_id%', keyId)
-        .replaceAll('%issuer_id%', issuerId)
-        .replaceAll('%key_filepath%', keyFilepath)
-        .replaceAll('%username%', username)
-        .replaceAll('%team_id%', teamId)
-        .replaceAll('%app_identifier%', appIdentifier);
-
-    // Write Fastfile for iOS
-    final fastfile = File(Constants.iosFastfilePath);
-    await fastfile.writeAsString(fastlaneContent);
   }
 
   Future<void> _createIosDeliveryFile() async {
@@ -360,17 +421,6 @@ class AutomateScript {
     }
   }
 
-  Future<void> _initializeAndroidFastlane() async {
-    print('Initializing Fastlane for Android...');
-    // Check if android directory exists
-    final androidDir = Directory(Constants.androidDirPath);
-    if (!androidDir.existsSync()) {
-      throw Exception(
-        'Android directory not found at ${Constants.androidDirPath}. Ensure this is a valid Flutter project with an Android module.',
-      );
-    }
-  }
-
   Future<void> _executeBuildFlow() async {
     try {
       await _runCommand(
@@ -393,14 +443,23 @@ class AutomateScript {
       // Build Process
       switch (platform) {
         case AutomatePlatform.all:
-          await _buildAndroid();
+          if (mode == AutomateMode.beta) {
+            await _buildAndroidApk();
+          } else if (mode == AutomateMode.update) {
+            await _buildAndroidAppBundle();
+          }
+
           await _buildIOS();
           break;
         case AutomatePlatform.ios:
           await _buildIOS();
           break;
         case AutomatePlatform.android:
-          await _buildAndroid();
+          if (mode == AutomateMode.beta) {
+            await _buildAndroidApk();
+          } else if (mode == AutomateMode.update) {
+            await _buildAndroidAppBundle();
+          }
           break;
       }
 
@@ -423,10 +482,24 @@ class AutomateScript {
     }
   }
 
-  Future<void> _buildAndroid() async {
+  Future<void> _buildAndroidApk() async {
     await _runCommand(
       'flutter',
       arguments: ['build', "apk", "--release"],
+      description: 'Building Android APK',
+    );
+  }
+
+  Future<void> _buildAndroidAppBundle() async {
+    await _runCommand(
+      'flutter',
+      arguments: [
+        'build',
+        "appbundle",
+        "--release",
+        "--obfuscate",
+        "--split-debug-info=build/app/outputs/symbols",
+      ],
       description: 'Building Android AppBundle',
     );
   }
@@ -440,7 +513,13 @@ class AutomateScript {
     );
     await _runCommand(
       'flutter',
-      arguments: ['build', "ipa", "--release"],
+      arguments: [
+        'build',
+        "ipa",
+        "--release",
+        "--obfuscate",
+        "--split-debug-info=build/ios/symbols",
+      ],
       description: 'Building iOS IPA',
     );
   }
@@ -449,13 +528,13 @@ class AutomateScript {
     switch (platform) {
       case AutomatePlatform.all:
         await _uploadToTestFlight();
-        await _buildAndroid();
+        await _buildAndroidApk();
         break;
       case AutomatePlatform.ios:
         await _uploadToTestFlight();
         break;
       case AutomatePlatform.android:
-        await _buildAndroid();
+        await _buildAndroidApk();
         break;
     }
   }
@@ -473,13 +552,13 @@ class AutomateScript {
     switch (platform) {
       case AutomatePlatform.all:
         await _handleIOSUpdateBuild();
-        //await _handleAndroidUpdateBuild();
+        await _handleAndroidUpdateBuild();
         break;
       case AutomatePlatform.ios:
         await _handleIOSUpdateBuild();
         break;
       case AutomatePlatform.android:
-        //await _handleAndroidUpdateBuild();
+        await _handleAndroidUpdateBuild();
         break;
     }
   }
@@ -503,11 +582,21 @@ class AutomateScript {
     try {
       print("Extracting changelog from automate_config.yaml...");
       final YamlMap? changeLog = _automateConfig.ios['changelog'] as YamlMap?;
-      if (changeLog == null) {
+      if (changeLog == null || changeLog.isEmpty || changeLog.value.isEmpty) {
         throw Exception(
           'Changelog required for update mode\nNo changelog found in automate_config.yaml',
         );
+      } else {
+        for (final locale in changeLog.keys) {
+          final message = changeLog[locale] as String;
+          if (message.isEmpty) {
+            throw Exception(
+              'Changelog required for update mode\nNo changelog found in automate_config.yaml',
+            );
+          }
+        }
       }
+
       print("Changelog extracted successfully.");
 
       // Check if Deliverfile exists
@@ -558,6 +647,76 @@ class AutomateScript {
         arguments: ['new_update'],
         description: 'Uploading new update to distribution',
         workingDir: 'ios',
+      );
+    } on Exception {
+      rethrow;
+    }
+  }
+
+  Future<void> _handleAndroidUpdateBuild() async {
+    try {
+      print("Extracting changelog from automate_config.yaml...");
+      final YamlMap? changeLog =
+          _automateConfig.android['changelog'] as YamlMap?;
+      if (changeLog == null || changeLog.isEmpty || changeLog.value.isEmpty) {
+        throw Exception(
+          'Changelog required for update mode\nNo changelog found in automate_config.yaml',
+        );
+      } else {
+        for (final locale in changeLog.keys) {
+          final message = changeLog[locale] as String;
+          if (message.isEmpty) {
+            throw Exception(
+              'Changelog required for update mode\nNo changelog found in automate_config.yaml',
+            );
+          }
+        }
+      }
+
+      print("Changelog extracted successfully.");
+
+      // Creating metadata directory | android/metadata/android/en-US and for each locale/changelogs/14.txt
+      final metadataDir = Directory(Constants.androidFastlaneMetadataDirPath);
+      if (!metadataDir.existsSync()) {
+        metadataDir.createSync();
+      }
+
+      final appVersion = await PubspecUtils.appVersion;
+      final versionCode = appVersion.split('+').last;
+
+      for (final locale in changeLog.keys) {
+        final message = changeLog[locale] as String;
+        final escapedMessage = message.replaceAll('"', r'\"')
+          ..replaceAll('\n', r'\n');
+        final changelogDirPath = "$metadataDir/android/$locale/changelogs";
+        final changelogsDir = Directory(changelogDirPath);
+
+        if (!changelogsDir.existsSync()) {
+          changelogsDir.createSync(recursive: true);
+        } else {
+          // remove old changelogs in changelogsDir
+          changelogsDir.listSync().forEach((file) {
+            file.deleteSync();
+          });
+        }
+
+        final changelogFile = File("$changelogDirPath/$versionCode.txt");
+        if (!changelogFile.existsSync()) {
+          changelogFile.createSync(recursive: true);
+        }
+
+        await changelogFile.writeAsString(escapedMessage);
+        print(
+          "Changelog for $locale created in ${changelogFile.path} successfully.",
+        );
+      }
+
+      print("Uploading new update to distribution...");
+      await _runCommand(
+        'fastlane',
+        arguments: ['new_update'],
+        description: 'Uploading new update to distribution',
+        workingDir: 'android',
       );
     } on Exception {
       rethrow;

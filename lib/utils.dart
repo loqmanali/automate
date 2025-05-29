@@ -5,7 +5,7 @@ import 'constants.dart';
 class Utils {
   Utils._();
 
-  static Future<String> get getIosBundleId async {
+  static Future<String> get iosBundleId async {
     // First, try Info.plist
     final infoPlist = File('${Constants.iosDirPath}/Runner/Info.plist');
     if (infoPlist.existsSync()) {
@@ -67,7 +67,7 @@ class Utils {
     );
   }
 
-  Future<String> _getAndroidPackageName() async {
+  static Future<String> get androidPackageName async {
     final gradleFile = File('${Constants.androidDirPath}/app/build.gradle');
     final ktsFile = File('${Constants.androidDirPath}/app/build.gradle.kts');
 
