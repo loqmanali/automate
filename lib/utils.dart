@@ -3,6 +3,25 @@ import 'dart:io';
 import 'constants.dart';
 
 class Utils {
+  static Future<String> get iosDisplayName async {
+    final infoPlist = File('${Constants.iosDirPath}/Runner/Info.plist');
+    if (!infoPlist.existsSync()) {
+      throw Exception(
+        'Info.plist not found at ${Constants.iosDirPath}/Runner/Info.plist',
+      );
+    }
+    final content = await infoPlist.readAsString();
+    final regex = RegExp(
+      r'<key>CFBundleDisplayName</key>\s*<string>(.*?)</string>',
+    );
+    final match = regex.firstMatch(content);
+    if (match != null && match.group(1) != null) {
+      return match.group(1)!.trim();
+    } else {
+      throw Exception('CFBundleDisplayName not found in Info.plist');
+    }
+  }
+
   Utils._();
 
   static Future<String> get iosBundleId async {

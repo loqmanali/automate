@@ -128,7 +128,7 @@ platform :ios do
   desc "Upload New Build to Test Flight"
   lane :beta do
     pilot(
-      ipa: "../build/ios/ipa/Banic.ipa",
+      ipa: "../build/ios/ipa/%display_name%.ipa",
       distribute_external: false,
       notify_external_testers: false,
       beta_app_description: "",
@@ -140,7 +140,7 @@ platform :ios do
   desc "Update App With New Build On App Store Connect"
   lane :new_update do
     deliver(
-      ipa: "../build/ios/ipa/Banic.ipa",
+      ipa: "../build/ios/ipa/%display_name%.ipa",
       skip_screenshots: true,
       precheck_include_in_app_purchases: false,
       submit_for_review: true,
@@ -166,7 +166,7 @@ platform :ios do
   desc "Release New App on App Store Connect"
   lane :release do
     deliver(
-      ipa: "../build/ios/ipa/Banic.ipa",
+      ipa: "../build/ios/ipa/%display_name%.ipa",
       skip_screenshots: false,
       screenshots_path: "./fastlane/screenshots",
       precheck_include_in_app_purchases: false,

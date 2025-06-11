@@ -268,6 +268,7 @@ class AutomateScript {
       }
 
       final appIdentifier = await Utils.iosBundleId;
+      final appDisplayName = await Utils.iosDisplayName;
 
       // Define Fastlane configuration for iOS
       const fastlaneTemplate = Templates.iosFastFileContent;
@@ -276,9 +277,10 @@ class AutomateScript {
       if (!fastlaneTemplate.contains('%key_id%') &&
           !fastlaneTemplate.contains('%issuer_id%') &&
           !fastlaneTemplate.contains('%key_filepath%') &&
+          !fastlaneTemplate.contains('%display_name%') &&
           !fastlaneTemplate.contains('%app_identifier%')) {
         throw Exception(
-          'Error: Missing key_id, issuer_id, app_identifier, or key_filepath in Fastlane template Must be all of: %key_id%, %issuer_id%, %key_filepath%, %app_identifier%, %team_id% or %username% existing in Fastlane template as placeholders',
+          'Error: Missing key_id, issuer_id, app_identifier, display_name, or key_filepath in Fastlane template Must be all of: %key_id%, %issuer_id%, %key_filepath%, %app_identifier%, %team_id% or %username% existing in Fastlane template as placeholders',
         );
       }
 
@@ -286,6 +288,7 @@ class AutomateScript {
       final fastlaneContent = fastlaneTemplate
           .replaceAll('%key_id%', keyId!)
           .replaceAll('%issuer_id%', issuerId!)
+          .replaceAll('%display_name%', appDisplayName)
           .replaceAll('%key_filepath%', keyFilepath!)
           .replaceAll('%app_identifier%', appIdentifier);
 
