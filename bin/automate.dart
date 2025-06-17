@@ -71,6 +71,7 @@ class AutomateScript {
 
     await _initializeFastlane();
 
+    print("\nSkipping build process: ${args['skip-build']}\n");
     await _executeBuildFlow(skipBuild: args['skip-build'] ?? false);
   }
 
