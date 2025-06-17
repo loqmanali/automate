@@ -27,12 +27,14 @@ class AutomateScript {
     // optional named args
 
     final parser =
-        ArgParser()..addOption(
-          'platform',
-          allowed: ['ios', 'android'],
-          help: 'Target platform',
-          abbr: 'p',
-        );
+        ArgParser()
+          ..addOption(
+            'platform',
+            allowed: ['ios', 'android'],
+            help: 'Target platform',
+            abbr: 'p',
+          )
+          ..addFlag("skip-build", abbr: "s", help: "Skip build process");
 
     final ArgResults args;
 
@@ -69,7 +71,7 @@ class AutomateScript {
 
     await _initializeFastlane();
 
-    await _executeBuildFlow();
+    await _executeBuildFlow(skipBuild: args['skip-build'] ?? false);
   }
 
   Future<void> _init() async {
@@ -424,46 +426,10 @@ class AutomateScript {
     }
   }
 
-  Future<void> _executeBuildFlow() async {
+  Future<void> _executeBuildFlow({bool skipBuild = false}) async {
     try {
-      await _runCommand(
-        'flutter',
-        arguments: ['clean'],
-        description: 'Cleaning project',
-      );
-      await _runCommand(
-        'flutter',
-        arguments: ['pub', 'get'],
-        description: 'Fetching dependencies',
-      );
-
-      // Increment version only if not android beta
-      if (!(platform == AutomatePlatform.android &&
-          mode == AutomateMode.beta)) {
-        await PubspecUtils.incrementVersion();
-      }
-
-      // Build Process
-      switch (platform) {
-        case AutomatePlatform.all:
-          if (mode == AutomateMode.beta) {
-            await _buildAndroidApk();
-          } else if (mode == AutomateMode.update) {
-            await _buildAndroidAppBundle();
-          }
-
-          await _buildIOS();
-          break;
-        case AutomatePlatform.ios:
-          await _buildIOS();
-          break;
-        case AutomatePlatform.android:
-          if (mode == AutomateMode.beta) {
-            await _buildAndroidApk();
-          } else if (mode == AutomateMode.update) {
-            await _buildAndroidAppBundle();
-          }
-          break;
+      if (!skipBuild) {
+        await _buildProcess();
       }
 
       // Upload Process
@@ -482,6 +448,47 @@ class AutomateScript {
       }
     } catch (e) {
       rethrow;
+    }
+  }
+
+  Future<void> _buildProcess() async {
+    await _runCommand(
+      'flutter',
+      arguments: ['clean'],
+      description: 'Cleaning project',
+    );
+    await _runCommand(
+      'flutter',
+      arguments: ['pub', 'get'],
+      description: 'Fetching dependencies',
+    );
+
+    // Increment version only if not android beta
+    if (!(platform == AutomatePlatform.android && mode == AutomateMode.beta)) {
+      await PubspecUtils.incrementVersion();
+    }
+
+    // Build Process
+    switch (platform) {
+      case AutomatePlatform.all:
+        if (mode == AutomateMode.beta) {
+          await _buildAndroidApk();
+        } else if (mode == AutomateMode.update) {
+          await _buildAndroidAppBundle();
+        }
+
+        await _buildIOS();
+        break;
+      case AutomatePlatform.ios:
+        await _buildIOS();
+        break;
+      case AutomatePlatform.android:
+        if (mode == AutomateMode.beta) {
+          await _buildAndroidApk();
+        } else if (mode == AutomateMode.update) {
+          await _buildAndroidAppBundle();
+        }
+        break;
     }
   }
 
