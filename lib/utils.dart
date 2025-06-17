@@ -3,23 +3,27 @@ import 'dart:io';
 import 'constants.dart';
 
 class Utils {
-  static Future<String> get iosDisplayName async {
-    final infoPlist = File('${Constants.iosDirPath}/Runner/Info.plist');
-    if (!infoPlist.existsSync()) {
+  static Future<String> get iosIpaName async {
+    final Directory buildDir = Directory(Constants.buildIosIpaDirPath);
+    if (!buildDir.existsSync()) {
       throw Exception(
-        'Info.plist not found at ${Constants.iosDirPath}/Runner/Info.plist',
+        'Build directory not found at ${Constants.buildIosIpaDirPath}',
       );
     }
-    final content = await infoPlist.readAsString();
-    final regex = RegExp(
-      r'<key>CFBundleDisplayName</key>\s*<string>(.*?)</string>',
+
+    // Find the first .ipa file in the directory
+    final ipaFile = buildDir.listSync().whereType<File>().where(
+      (file) => file.path.endsWith('.ipa'),
     );
-    final match = regex.firstMatch(content);
-    if (match != null && match.group(1) != null) {
-      return match.group(1)!.trim();
-    } else {
-      throw Exception('CFBundleDisplayName not found in Info.plist');
+
+    if (ipaFile.isEmpty) {
+      throw Exception('No .ipa file found in build directory');
     }
+
+    final ipaFilePath = ipaFile.first.path;
+    final ipaFileName = ipaFilePath.split('/').last;
+    final ipaName = ipaFileName.split('.').first;
+    return ipaName;
   }
 
   Utils._();

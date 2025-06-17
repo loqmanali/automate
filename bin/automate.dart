@@ -268,7 +268,7 @@ class AutomateScript {
       }
 
       final appIdentifier = await Utils.iosBundleId;
-      final appDisplayName = await Utils.iosDisplayName;
+      final iosIpaName = await Utils.iosIpaName;
 
       // Define Fastlane configuration for iOS
       const fastlaneTemplate = Templates.iosFastFileContent;
@@ -288,7 +288,7 @@ class AutomateScript {
       final fastlaneContent = fastlaneTemplate
           .replaceAll('%key_id%', keyId!)
           .replaceAll('%issuer_id%', issuerId!)
-          .replaceAll('%display_name%', appDisplayName)
+          .replaceAll('%display_name%', iosIpaName)
           .replaceAll('%key_filepath%', keyFilepath!)
           .replaceAll('%app_identifier%', appIdentifier);
 

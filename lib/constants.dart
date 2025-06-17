@@ -6,6 +6,7 @@ class Constants {
 
   //.gitignore
   static String get gitignorePath => '$_projectDir/.gitignore';
+  static String get buildIosIpaDirPath => '$_projectDir/build/ios/ipa';
 
   // Directories
   static String get iosDirPath => '$_projectDir/ios';
