@@ -474,7 +474,7 @@ class AutomateScript {
       case AutomatePlatform.all:
         if (mode == AutomateMode.beta) {
           await _buildAndroidApk();
-        } else if (mode == AutomateMode.update) {
+        } else {
           await _buildAndroidAppBundle();
         }
 
@@ -486,7 +486,7 @@ class AutomateScript {
       case AutomatePlatform.android:
         if (mode == AutomateMode.beta) {
           await _buildAndroidApk();
-        } else if (mode == AutomateMode.update) {
+        } else {
           await _buildAndroidAppBundle();
         }
         break;
