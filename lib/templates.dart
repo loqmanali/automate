@@ -126,7 +126,7 @@ platform :ios do
       ipa: "../build/ios/ipa/%display_name%.ipa",
       distribute_external: false,
       notify_external_testers: false,
-      beta_app_description: "",
+      beta_app_description: "TESTING",
       expire_previous_builds: true,
       groups: "Testers",
     )
