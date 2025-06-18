@@ -41,14 +41,8 @@ ios:
         en-US: ""
         # ar-SA: ""
       description:
-        en-US: >
-          This is Example of Multiline Description
-          You can use copy your description
-          and paste it here.
-          # ar-SA: >
-          # هذا مثال على وصف متعدد الأسطر
-          # يمكنك استخدام نسخ ولصق وصفك
-        # هنا.
+        en-US: ""
+        ar-SA: ""
   
       privacy_url:
         en-US: ""
