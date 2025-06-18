@@ -407,9 +407,15 @@ iOS app rating config json
   * Uses DATA_LINKED_TO_YOU or DATA_NOT_LINKED_TO_YOU
   * Optionally uses DATA_USED_TO_TRACK_YOU
 
-  For Screenshots on iOS
-  use this naming convention in screenshots folder en-US or another locale like ar-SA
+## Screenshots Naming Rules
 
+Put all screenshots you want to use inside the folder of its language (e.g. `en-US`).
+The device type will automatically be recognized using the image resolution.
+
+The screenshots can be named whatever you want, but keep in mind they are sorted
+alphabetically, in a human-friendly way. See https://github.com/fastlane/fastlane/pull/18200 for more details.
+
+### Exceptions
   for 6.7":
   0_APP_IPHONE_67_0.png
   1_APP_IPHONE_67_1.png
