@@ -439,7 +439,7 @@ class AutomateScript {
           await _handleBetaBuild();
           break;
         case AutomateMode.release:
-          await _handleReleaseBuild();
+          await _handleIOSReleaseBuild();
           break;
         case AutomateMode.update:
           await _handleUpdateBuild();
@@ -570,21 +570,6 @@ class AutomateScript {
         break;
       case AutomatePlatform.android:
         await _handleAndroidUpdateBuild();
-        break;
-    }
-  }
-
-  Future<void> _handleReleaseBuild() async {
-    switch (platform) {
-      case AutomatePlatform.all:
-        await _handleIOSReleaseBuild();
-        //await _handleAndroidReleaseBuild();
-        break;
-      case AutomatePlatform.ios:
-        await _handleIOSReleaseBuild();
-        break;
-      case AutomatePlatform.android:
-        //await _handleAndroidReleaseBuild();
         break;
     }
   }
