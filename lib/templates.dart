@@ -407,6 +407,25 @@ iOS app rating config json
   * Uses DATA_LINKED_TO_YOU or DATA_NOT_LINKED_TO_YOU
   * Optionally uses DATA_USED_TO_TRACK_YOU
 
+  For Screenshots on iOS
+  use this naming convention in screenshots folder en-US or another locale like ar-SA
 
+  for 6.7":
+  0_APP_IPHONE_67_0.png
+  1_APP_IPHONE_67_1.png
+  2_APP_IPHONE_67_2.png 
+  3_APP_IPHONE_67_3.png
+  4_APP_IPHONE_67_4.png
+  5_APP_IPHONE_67_5.png
+  6_APP_IPHONE_67_6.png
+  
+  for 6.5":
+  0_APP_IPHONE_65_0.png
+  1_APP_IPHONE_65_1.png
+  2_APP_IPHONE_65_2.png 
+  3_APP_IPHONE_65_3.png
+  4_APP_IPHONE_65_4.png
+  5_APP_IPHONE_65_5.png
+  6_APP_IPHONE_65_6.png
   ''';
 }
