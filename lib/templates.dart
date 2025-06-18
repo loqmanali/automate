@@ -321,7 +321,6 @@ iOS app rating config json
   "violenceRealisticProlongedGraphicOrSadistic": "NONE",
   "violenceRealistic": "NONE",
   "gambling": false,  
-  "seventeenPlus": false,
   "unrestrictedWebAccess": false,
   "lootBox": false
 }
