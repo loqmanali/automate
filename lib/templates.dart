@@ -23,8 +23,18 @@ ios:
     # ar-SA: ""
 
   info:
+    app_review_information:
+      # (Required for release)
+      first_name: ""
+      last_name: ""
+      email_address: ""
+      phone_number: ""
+      demo_user: ""
+      demo_password: ""
+      # (Optional)
+      # notes: "Notes"
+          
     # ----- Localized Information -----
-    
     localized:
       # (Required For Release)
       name:
@@ -86,16 +96,7 @@ ios:
   
   
 
-    app_review_information:
-      # (Required for release)
-      first_name: ""
-      last_name: ""
-      email_address: ""
-      phone_number: ""
-      demo_user: ""
-      demo_password: ""
-      # (Optional)
-      # notes: "Notes"
+
   ''';
 
   static const String iosFastFileContent = '''
