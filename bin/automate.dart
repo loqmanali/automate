@@ -271,7 +271,6 @@ class AutomateScript {
       }
 
       final appIdentifier = await Utils.iosBundleId;
-      final iosIpaName = await Utils.iosIpaName;
 
       // Define Fastlane configuration for iOS
       const fastlaneTemplate = Templates.iosFastFileContent;
@@ -291,7 +290,6 @@ class AutomateScript {
       final fastlaneContent = fastlaneTemplate
           .replaceAll('%key_id%', keyId!)
           .replaceAll('%issuer_id%', issuerId!)
-          .replaceAll('%display_name%', iosIpaName)
           .replaceAll('%key_filepath%', keyFilepath!)
           .replaceAll('%app_identifier%', appIdentifier);
 
@@ -533,6 +531,13 @@ class AutomateScript {
       ],
       description: 'Building iOS IPA',
     );
+
+    // Modify Display Name in fastfile ios
+    final iosIpaName = await Utils.iosIpaName;
+    final fastfile = File(Constants.iosFastfilePath);
+    String fastfileContent = await fastfile.readAsString();
+    fastfileContent = fastfileContent.replaceAll('%display_name%', iosIpaName);
+    await fastfile.writeAsString(fastfileContent);
   }
 
   Future<void> _handleBetaBuild() async {
