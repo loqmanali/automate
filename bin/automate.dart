@@ -521,6 +521,12 @@ class AutomateScript {
       workingDir: 'ios',
     );
     await _runCommand(
+      'pod',
+      arguments: ['update'],
+      description: 'Updating CocoaPods',
+      workingDir: 'ios',
+    );
+    await _runCommand(
       'flutter',
       arguments: [
         'build',
