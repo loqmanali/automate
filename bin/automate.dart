@@ -12,7 +12,7 @@ class AutomateScript {
   AutomatePlatform platform = AutomatePlatform.all;
   late AutomateMode mode;
   final AutomateConfig _automateConfig = AutomateConfig.instance;
-
+  bool skipBuild = false;
   final String _projectDir = Directory.current.path;
 
   Future<void> run(List<String> arguments) async {
@@ -56,6 +56,8 @@ class AutomateScript {
         );
       }
       mode = firstArgument.toAutomateMode();
+    } else if (args['skip-build'] ?? false) {
+      skipBuild = true;
     } else if (firstArgument == 'init') {
       await _init();
 
@@ -72,7 +74,7 @@ class AutomateScript {
     await _initializeFastlane();
 
     print("\nSkipping build process: ${args['skip-build']}\n");
-    await _executeBuildFlow(skipBuild: args['skip-build'] ?? false);
+    await _executeBuildFlow();
   }
 
   Future<void> _init() async {
@@ -287,11 +289,21 @@ class AutomateScript {
       }
 
       // Replace placeholders with config values
-      final fastlaneContent = fastlaneTemplate
+      String fastlaneContent = fastlaneTemplate
           .replaceAll('%key_id%', keyId!)
           .replaceAll('%issuer_id%', issuerId!)
           .replaceAll('%key_filepath%', keyFilepath!)
           .replaceAll('%app_identifier%', appIdentifier);
+
+      // Means That IPAs are already built and exists
+      if (skipBuild) {
+        final iosIpaName = await Utils.iosIpaName;
+        // Modify Display Name in fastfile ios
+        fastlaneContent = fastlaneContent.replaceAll(
+          '%display_name%',
+          iosIpaName,
+        );
+      }
 
       // Write Fastfile for iOS
       final fastfile = File(Constants.iosFastfilePath);
@@ -425,7 +437,7 @@ class AutomateScript {
     }
   }
 
-  Future<void> _executeBuildFlow({bool skipBuild = false}) async {
+  Future<void> _executeBuildFlow() async {
     try {
       if (!skipBuild) {
         await _buildProcess();
