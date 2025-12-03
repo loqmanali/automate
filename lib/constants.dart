@@ -31,16 +31,5 @@ class Constants {
   // Automate Config
   static String get automateDirPath => '$_projectDir/automate';
   static String get automateConfigFilePath =>
-      '$automateDirPath/automate_config.yaml';
-
-  // Automate Readme
-  static String get automateReadmePath => '$automateDirPath/README.md';
-
-  // IOS app_rating_config.json
-  static String get appRatingConfigPath =>
-      '$automateDirPath/app_rating_config.json';
-
-  // IOS app_privacy_details.json
-  static String get appPrivacyDetailsPath =>
-      '$automateDirPath/app_privacy_details.json';
+      '$automateDirPath/automate_config.json';
 }

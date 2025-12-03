@@ -1,7 +1,7 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:automate/constants.dart';
-import 'package:yaml/yaml.dart';
 
 class AutomateConfig {
   //Singleton
@@ -9,48 +9,32 @@ class AutomateConfig {
   static AutomateConfig get instance => _instance ??= AutomateConfig._();
   AutomateConfig._();
 
-  late YamlMap _config;
+  late Map<String, dynamic> _config;
 
-  YamlMap get ios {
-    final ios = _config['ios'] as YamlMap?;
+  Map<String, dynamic> get ios {
+    final ios = _config['ios'] as Map<String, dynamic>?;
     if (ios == null) {
-      throw Exception('Missing ios in automate_config.yaml');
+      throw Exception('Missing ios in automate_config.json');
     }
     return ios;
   }
 
-  YamlMap get appStoreConfig {
-    final appStoreConfig = ios['app_store_connect'] as YamlMap?;
+  Map<String, dynamic> get appStoreConfig {
+    final appStoreConfig = ios['app_store_connect'] as Map<String, dynamic>?;
     if (appStoreConfig == null) {
-      throw Exception('Missing ios.app_store_connect in automate_config.yaml');
+      throw Exception('Missing ios.app_store_connect in automate_config.json');
     }
     return appStoreConfig;
   }
 
-  YamlMap? get testflightConfig {
-    return ios['testflight'] as YamlMap?;
+  Map<String, dynamic>? get testflightConfig {
+    return ios['testflight'] as Map<String, dynamic>?;
   }
 
-  YamlMap get iosInfo {
-    final iosInfo = ios['info'] as YamlMap?;
-    if (iosInfo == null) {
-      throw Exception('Missing ios.info in automate_config.yaml');
-    }
-    return iosInfo;
-  }
-
-  YamlMap get iosAppReviewInfo {
-    final appReviewInfo = iosInfo['app_review_information'] as YamlMap?;
-    if (appReviewInfo == null) {
-      throw Exception('Missing ios.app_review_info in automate_config.yaml');
-    }
-    return appReviewInfo;
-  }
-
-  YamlMap get android {
-    final android = _config['android'] as YamlMap?;
+  Map<String, dynamic> get android {
+    final android = _config['android'] as Map<String, dynamic>?;
     if (android == null) {
-      throw Exception('Missing android in automate_config.yaml');
+      throw Exception('Missing android in automate_config.json');
     }
     return android;
   }
@@ -60,11 +44,11 @@ class AutomateConfig {
       final configFile = File(Constants.automateConfigFilePath);
       if (!configFile.existsSync()) {
         throw Exception(
-          'automate_config.yaml not found in the automate directory',
+          'automate_config.json not found in the automate directory',
         );
       }
       final configContent = await configFile.readAsString();
-      _config = loadYaml(configContent) as YamlMap;
+      _config = jsonDecode(configContent) as Map<String, dynamic>;
     } on Exception {
       rethrow;
     }

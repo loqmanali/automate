@@ -1,13 +1,10 @@
 import 'dart:io';
 
-import 'package:yaml/yaml.dart';
-
 class PubspecUtils {
   static final String _projectDir = Directory.current.path;
 
   static Future<void> incrementVersion() async {
-    final pubspec = await _readPubspec();
-    final version = pubspec['version'].toString();
+    final version = await appVersion;
     final parts = version.split('+');
     final versionParts = parts[0].split('.');
     final patch = int.parse(versionParts[2]) + 1;
@@ -18,15 +15,17 @@ class PubspecUtils {
     print('Incremented version to $newVersion, build number to $buildNumber');
   }
 
-  static Future<String> get appVersion async =>
-      (await _readPubspec())['version'].toString();
-
-  static Future<YamlMap> _readPubspec() async {
+  static Future<String> get appVersion async {
     final file = File('$_projectDir/pubspec.yaml');
     if (!file.existsSync()) {
       throw Exception('pubspec.yaml not found');
     }
-    return loadYaml(await file.readAsString()) as YamlMap;
+    final content = await file.readAsString();
+    final versionMatch = RegExp(r'version:\s*(.+)').firstMatch(content);
+    if (versionMatch == null) {
+      throw Exception('version not found in pubspec.yaml');
+    }
+    return versionMatch.group(1)!.trim();
   }
 
   static Future<void> _writePubspec(String newVersion) async {

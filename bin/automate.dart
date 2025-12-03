@@ -6,7 +6,6 @@ import 'package:automate/constants.dart';
 import 'package:automate/templates.dart';
 import 'package:automate/pubspec_utils.dart';
 import 'package:automate/utils.dart';
-import 'package:yaml/yaml.dart';
 
 class AutomateScript {
   AutomatePlatform platform = AutomatePlatform.all;
@@ -18,7 +17,7 @@ class AutomateScript {
   Future<void> run(List<String> arguments) async {
     if (arguments.isEmpty) {
       throw Exception(
-        'Error: Mode (beta, release, or update) must be provided.',
+        'Error: Mode (beta or update) must be provided.',
       );
     }
 
@@ -49,12 +48,7 @@ class AutomateScript {
     } else if (args['platform'] == 'android') {
       platform = AutomatePlatform.android;
     }
-    if (['beta', 'release', 'update'].contains(firstArgument)) {
-      if (firstArgument == 'release' && platform == AutomatePlatform.android) {
-        throw Exception(
-          'Error: Release build is not supported for Android platform.',
-        );
-      }
+    if (['beta', 'update'].contains(firstArgument)) {
       mode = firstArgument.toAutomateMode();
     } else if (args['skip-build'] ?? false) {
       skipBuild = true;
@@ -64,11 +58,11 @@ class AutomateScript {
       exit(0);
     } else {
       throw Exception(
-        'Error: Invalid mode "${arguments.first}". Must be one of: beta, release, update.',
+        'Error: Invalid mode "${arguments.first}". Must be one of: beta, update.',
       );
     }
 
-    // load automate_config.yaml
+    // load automate_config.json
     await _automateConfig.load();
 
     await _initializeFastlane();
@@ -84,16 +78,9 @@ class AutomateScript {
     print('Creating ${Constants.automateDirPath}...');
     _createNewDirectory(Constants.automateDirPath);
 
-    //Generate Readme.md
-    print('Creating in automate directory ${Constants.automateReadmePath}...');
-    _writeToFile(
-      Constants.automateReadmePath,
-      content: Templates.automateReadmeContent,
-    );
-
-    // Adding automate_config.yaml in gitignore
+    // Adding automate_config.json in gitignore
     if (File(Constants.gitignorePath).existsSync()) {
-      const formattedPath = '/automate/automate_config.yaml';
+      const formattedPath = '/automate/automate_config.json';
       print('Adding $formattedPath to .gitignore...');
       // Read .gitignore file
       final gitignoreContent = File(Constants.gitignorePath).readAsStringSync();
@@ -108,29 +95,13 @@ class AutomateScript {
       }
     }
 
-    // Generate automate_config.yaml
+    // Generate automate_config.json
     print(
       'Creating in automate directory ${Constants.automateConfigFilePath}...',
     );
     _writeToFile(
       Constants.automateConfigFilePath,
       content: Templates.automateConfigContent,
-    );
-
-    // Generate app_rating_config.json
-    print('Creating in automate directory ${Constants.appRatingConfigPath}...');
-    _writeToFile(
-      Constants.appRatingConfigPath,
-      content: Templates.iosAppRatingConfig,
-    );
-
-    // Generate app_privacy_details.json
-    print(
-      'Creating in automate directory ${Constants.appPrivacyDetailsPath}...',
-    );
-    _writeToFile(
-      Constants.appPrivacyDetailsPath,
-      content: Templates.iosAppPrivacyDetails,
     );
 
     // Create screenshots directory in IOS
@@ -268,7 +239,7 @@ class AutomateScript {
           (issuerId?.isEmpty ?? true) ||
           (keyFilepath?.isEmpty ?? true)) {
         throw Exception(
-          'Missing key_id, issuer_id, or key_filepath in automate_config.yaml',
+          'Missing key_id, issuer_id, or key_filepath in automate_config.json',
         );
       }
 
@@ -333,7 +304,7 @@ class AutomateScript {
       final packageName = await Utils.androidPackageName;
 
       if (jsonKeyPath?.isEmpty ?? true) {
-        throw Exception('Missing json_key_path in automate_config.yaml');
+        throw Exception('Missing json_key_path in automate_config.json');
       }
 
       // Define Fastlane configuration for Android
@@ -354,98 +325,6 @@ class AutomateScript {
     }
   }
 
-  Future<void> _createIosDeliveryFile() async {
-    try {
-      print("Generating Deliverfile from automate_config.yaml...");
-
-      // Extract ios section from YAML
-      final iosConfig = _automateConfig.ios;
-
-      // Extract localized, unlocalized, and app review information
-      final localizedInfo = iosConfig['info']['localized'] as YamlMap?;
-      final unlocalizedInfo = iosConfig['info']['unlocalized'] as YamlMap?;
-      final appReviewInfo =
-          iosConfig['info']['app_review_information'] as YamlMap?;
-
-      if (localizedInfo == null ||
-          unlocalizedInfo == null ||
-          appReviewInfo == null) {
-        throw Exception('Missing required sections in ios configuration');
-      }
-
-      // Create or open Deliverfile
-      final deliverFile = File(Constants.iosDeliverfilePath);
-      if (!deliverFile.existsSync()) {
-        deliverFile.createSync(recursive: true);
-        print("Deliverfile created at ${Constants.iosDeliverfilePath}");
-      }
-
-      // Build Deliverfile content
-      final buffer = StringBuffer();
-      buffer.writeln(
-        '# The Deliverfile allows you to store various App Store Connect metadata',
-      );
-      buffer.writeln('# For more information, check out the docs');
-      buffer.writeln('# https://docs.fastlane.tools/actions/deliver/');
-      buffer.writeln();
-
-      // App Review Information
-      buffer.writeln('app_review_information(');
-      for (final entry in appReviewInfo.entries) {
-        final key = entry.key as String;
-        final value = entry.value as String;
-        buffer.writeln('  $key: "$value",');
-      }
-      buffer.writeln(')');
-      buffer.writeln();
-
-      // Localized Fields
-      for (final fieldEntry in localizedInfo.entries) {
-        final fieldName = fieldEntry.key as String;
-        final fieldData = fieldEntry.value as YamlMap;
-
-        buffer.writeln('$fieldName(');
-        if (fieldName != 'subtitle') {
-          buffer.writeln('{');
-        }
-        for (final localeEntry in fieldData.entries) {
-          final locale = localeEntry.key as String;
-          final value = (localeEntry.value as String)
-              .replaceAll('"', r'\"')
-              .replaceAll('\n', r'\n');
-
-          buffer.writeln('  "$locale" => "$value",');
-        }
-        if (fieldName != 'subtitle') {
-          buffer.writeln('}');
-        }
-        buffer.writeln(')');
-        buffer.writeln();
-      }
-
-      // Unlocalized Fields
-      for (final entry in unlocalizedInfo.entries) {
-        final key = entry.key as String;
-        final value = entry.value as String;
-        if (key == 'copyright') {
-          buffer.writeln('$key("#{Time.now.year} $value")');
-        } else {
-          buffer.writeln('$key("$value")');
-        }
-        buffer.writeln();
-      }
-
-      // Write content to Deliverfile
-      await deliverFile.writeAsString(buffer.toString());
-      buffer.clear();
-      print(
-        "Deliverfile generated successfully at ${Constants.iosDeliverfilePath}",
-      );
-    } catch (e) {
-      throw Exception('Failed to generate Deliverfile: $e');
-    }
-  }
-
   Future<void> _executeBuildFlow() async {
     try {
       if (!skipBuild) {
@@ -456,9 +335,6 @@ class AutomateScript {
       switch (mode) {
         case AutomateMode.beta:
           await _handleBetaBuild();
-          break;
-        case AutomateMode.release:
-          await _handleIOSReleaseBuild();
           break;
         case AutomateMode.update:
           await _handleUpdateBuild();
@@ -608,18 +484,19 @@ class AutomateScript {
 
   Future<void> _handleIOSUpdateBuild() async {
     try {
-      print("Extracting changelog from automate_config.yaml...");
-      final YamlMap? changeLog = _automateConfig.ios['changelog'] as YamlMap?;
-      if (changeLog == null || changeLog.isEmpty || changeLog.value.isEmpty) {
+      print("Extracting changelog from automate_config.json...");
+      final Map<String, dynamic>? changeLog =
+          _automateConfig.ios['changelog'] as Map<String, dynamic>?;
+      if (changeLog == null || changeLog.isEmpty) {
         throw Exception(
-          'Changelog required for update mode\nNo changelog found in automate_config.yaml',
+          'Changelog required for update mode\nNo changelog found in automate_config.json',
         );
       } else {
         for (final locale in changeLog.keys) {
           final message = changeLog[locale] as String;
           if (message.isEmpty) {
             throw Exception(
-              'Changelog required for update mode\nNo changelog found in automate_config.yaml',
+              'Changelog required for update mode\nNo changelog found in automate_config.json',
             );
           }
         }
@@ -683,19 +560,19 @@ class AutomateScript {
 
   Future<void> _handleAndroidUpdateBuild() async {
     try {
-      print("Extracting changelog from automate_config.yaml...");
-      final YamlMap? changeLog =
-          _automateConfig.android['changelog'] as YamlMap?;
-      if (changeLog == null || changeLog.isEmpty || changeLog.value.isEmpty) {
+      print("Extracting changelog from automate_config.json...");
+      final Map<String, dynamic>? changeLog =
+          _automateConfig.android['changelog'] as Map<String, dynamic>?;
+      if (changeLog == null || changeLog.isEmpty) {
         throw Exception(
-          'Changelog required for update mode\nNo changelog found in automate_config.yaml',
+          'Changelog required for update mode\nNo changelog found in automate_config.json',
         );
       } else {
         for (final locale in changeLog.keys) {
           final message = changeLog[locale] as String;
           if (message.isEmpty) {
             throw Exception(
-              'Changelog required for update mode\nNo changelog found in automate_config.yaml',
+              'Changelog required for update mode\nNo changelog found in automate_config.json',
             );
           }
         }
@@ -750,51 +627,6 @@ class AutomateScript {
       );
     } on Exception {
       rethrow;
-    }
-  }
-
-  Future<void> _handleIOSReleaseBuild() async {
-    try {
-      await _createIosDeliveryFile();
-
-      print("Uploading new release to distribution...");
-      await _runCommand(
-        'fastlane',
-        arguments: ['release'],
-        description: 'Uploading new release to distribution',
-        workingDir: 'ios',
-      );
-
-      print("Release uploaded successfully!.");
-      print("-----------------------------------");
-
-      await _uploadIosAppPrivacy();
-    } on Exception {
-      rethrow;
-    }
-  }
-
-  Future<void> _uploadIosAppPrivacy() async {
-    print("Trying to upload the app privacy details...");
-    print("It may fails if it is the first time you are uploading a release.");
-    print(
-      "Because the uploading of the app privacy details require interactive from you to login in app store connect.",
-    );
-    print(
-      "If it fails, please run this command 'fastlane upload_app_privacy' in your terminal in ios directory.",
-    );
-    try {
-      await _runCommand(
-        'fastlane',
-        arguments: ['upload_app_privacy'],
-        description: 'Uploading app privacy details',
-        workingDir: 'ios',
-      );
-    } on Exception catch (e) {
-      print("Error uploading app privacy details: $e");
-      throw Exception(
-        "Try to run this command 'fastlane upload_app_privacy' in your terminal in ios directory.",
-      );
     }
   }
 
