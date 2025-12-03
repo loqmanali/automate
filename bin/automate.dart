@@ -322,6 +322,10 @@ class AutomateScript {
         );
       }
 
+      // Get beta_app_feedback_email (required for external testing, optional otherwise)
+      final betaAppFeedbackEmail =
+          testflightConfig?['beta_app_feedback_email']?.toString() ?? '';
+
       // Replace placeholders with config values
       String fastlaneContent = fastlaneTemplate
           .replaceAll('%key_id%', keyId!)
@@ -332,6 +336,7 @@ class AutomateScript {
             '%enable_external_testing%',
             enableExternalTesting.toString(),
           )
+          .replaceAll('%beta_app_feedback_email%', betaAppFeedbackEmail)
           .replaceAll('%external_testing_config%', externalTestingConfig);
 
       // Means That IPAs are already built and exists
