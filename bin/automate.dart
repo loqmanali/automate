@@ -101,27 +101,6 @@ class AutomateScript {
       Constants.automateConfigFilePath,
       content: Templates.automateConfigContent,
     );
-
-    // Create screenshots directory in IOS
-
-    if (platform == AutomatePlatform.ios || platform == AutomatePlatform.all) {
-      final fastlaneDir = Directory(Constants.iosFastlaneDirPath);
-      if (!fastlaneDir.existsSync()) {
-        await fastlaneDir.create(recursive: true);
-      }
-      final screenshotsDir = Directory(
-        '${Constants.iosFastlaneDirPath}/screenshots',
-      );
-      if (!screenshotsDir.existsSync()) {
-        await screenshotsDir.create(recursive: true);
-        final enLangDir = Directory(
-          '${Constants.iosFastlaneDirPath}/screenshots/en-US',
-        );
-        if (!enLangDir.existsSync()) {
-          await enLangDir.create(recursive: true);
-        }
-      }
-    }
   }
 
   void _createNewDirectory(String path) {
@@ -300,14 +279,28 @@ class AutomateScript {
         final buffer = StringBuffer();
         buffer.writeln();
         buffer.writeln('      groups: "$groups",');
-        buffer.writeln('      beta_app_feedback_email: "$betaAppFeedbackEmail",');
+        buffer.writeln(
+          '      beta_app_feedback_email: "$betaAppFeedbackEmail",',
+        );
         buffer.writeln('      beta_app_review_info: {');
-        buffer.writeln('        contact_email: "${betaAppReviewInfo['contact_email']}",');
-        buffer.writeln('        contact_first_name: "${betaAppReviewInfo['contact_first_name']}",');
-        buffer.writeln('        contact_last_name: "${betaAppReviewInfo['contact_last_name']}",');
-        buffer.writeln('        contact_phone: "${betaAppReviewInfo['contact_phone']}",');
-        buffer.writeln('        demo_account_name: "${betaAppReviewInfo['demo_account_name']}",');
-        buffer.writeln('        demo_account_password: "${betaAppReviewInfo['demo_account_password']}",');
+        buffer.writeln(
+          '        contact_email: "${betaAppReviewInfo['contact_email']}",',
+        );
+        buffer.writeln(
+          '        contact_first_name: "${betaAppReviewInfo['contact_first_name']}",',
+        );
+        buffer.writeln(
+          '        contact_last_name: "${betaAppReviewInfo['contact_last_name']}",',
+        );
+        buffer.writeln(
+          '        contact_phone: "${betaAppReviewInfo['contact_phone']}",',
+        );
+        buffer.writeln(
+          '        demo_account_name: "${betaAppReviewInfo['demo_account_name']}",',
+        );
+        buffer.writeln(
+          '        demo_account_password: "${betaAppReviewInfo['demo_account_password']}",',
+        );
         if (notes.isNotEmpty) {
           buffer.writeln('        notes: "$notes",');
         }
