@@ -274,6 +274,11 @@ class AutomateScript {
 
       final appIdentifier = await Utils.iosBundleId;
 
+      // Get TestFlight configuration (optional)
+      final testflightConfig = _automateConfig.testflightConfig;
+      final enableExternalTesting =
+          testflightConfig?['enable_external_testing'] as bool? ?? false;
+
       // Define Fastlane configuration for iOS
       const fastlaneTemplate = Templates.iosFastFileContent;
 
@@ -293,7 +298,11 @@ class AutomateScript {
           .replaceAll('%key_id%', keyId!)
           .replaceAll('%issuer_id%', issuerId!)
           .replaceAll('%key_filepath%', keyFilepath!)
-          .replaceAll('%app_identifier%', appIdentifier);
+          .replaceAll('%app_identifier%', appIdentifier)
+          .replaceAll(
+            '%enable_external_testing%',
+            enableExternalTesting.toString(),
+          );
 
       // Means That IPAs are already built and exists
       if (skipBuild) {

@@ -27,6 +27,10 @@ class AutomateConfig {
     return appStoreConfig;
   }
 
+  YamlMap? get testflightConfig {
+    return ios['testflight'] as YamlMap?;
+  }
+
   YamlMap get iosInfo {
     final iosInfo = ios['info'] as YamlMap?;
     if (iosInfo == null) {

@@ -16,6 +16,11 @@ ios:
     issuer_id: "(Required)"
     key_filepath: "(Required)"
 
+  # (Optional) TestFlight Configuration
+  testflight:
+    # Enable external testing for TestFlight builds
+    enable_external_testing: false
+
   # (Required for update)
   # Changelog is the Release Notes used only in automate update mode
   changelog :
@@ -124,8 +129,8 @@ platform :ios do
   lane :beta do
     pilot(
       ipa: "../build/ios/ipa/%display_name%.ipa",
-      distribute_external: false,
-      notify_external_testers: false,
+      distribute_external: %enable_external_testing%,
+      notify_external_testers: %enable_external_testing%,
       beta_app_description: "TESTING",
       expire_previous_builds: true,
       groups: "Testers",
