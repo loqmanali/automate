@@ -27,8 +27,9 @@ class Templates {
         "contact_first_name": "(Required if external testing enabled)",
         "contact_last_name": "(Required if external testing enabled)",
         "contact_phone": "(Required if external testing enabled)",
-        "demo_account_name": "(Required if external testing enabled)",
-        "demo_account_password": "(Required if external testing enabled)",
+        "demo_account_required": false,
+        "demo_account_name": "(Required if demo_account_required is true)",
+        "demo_account_password": "(Required if demo_account_required is true)",
         "notes": ""
       }
     }

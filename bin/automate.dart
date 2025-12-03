@@ -261,8 +261,6 @@ class AutomateScript {
           'contact_first_name',
           'contact_last_name',
           'contact_phone',
-          'demo_account_name',
-          'demo_account_password',
         ];
 
         for (final field in requiredReviewFields) {
@@ -271,6 +269,23 @@ class AutomateScript {
             throw Exception(
               'Missing testflight.beta_app_review_info.$field in automate_config.json (required for external testing)',
             );
+          }
+        }
+
+        // Check if demo account is required
+        final demoAccountRequired =
+            betaAppReviewInfo['demo_account_required'] as bool? ?? false;
+
+        // Validate demo account fields only if demo_account_required is true
+        if (demoAccountRequired) {
+          final demoAccountFields = ['demo_account_name', 'demo_account_password'];
+          for (final field in demoAccountFields) {
+            final value = betaAppReviewInfo[field]?.toString();
+            if (value?.isEmpty ?? true) {
+              throw Exception(
+                'Missing testflight.beta_app_review_info.$field in automate_config.json (required when demo_account_required is true)',
+              );
+            }
           }
         }
 
@@ -296,11 +311,16 @@ class AutomateScript {
           '        contact_phone: "${betaAppReviewInfo['contact_phone']}",',
         );
         buffer.writeln(
-          '        demo_account_name: "${betaAppReviewInfo['demo_account_name']}",',
+          '        demo_account_required: $demoAccountRequired,',
         );
-        buffer.writeln(
-          '        demo_account_password: "${betaAppReviewInfo['demo_account_password']}",',
-        );
+        if (demoAccountRequired) {
+          buffer.writeln(
+            '        demo_account_name: "${betaAppReviewInfo['demo_account_name']}",',
+          );
+          buffer.writeln(
+            '        demo_account_password: "${betaAppReviewInfo['demo_account_password']}",',
+          );
+        }
         if (notes.isNotEmpty) {
           buffer.writeln('        notes: "$notes",');
         }
