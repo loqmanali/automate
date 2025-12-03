@@ -70,15 +70,9 @@ platform :ios do
       distribute_external: %enable_external_testing%,
       notify_external_testers: %enable_external_testing%,
       beta_app_description: "This Build for TESTING",
-      beta_app_feedback_email: "%beta_app_feedback_email%",
       changelog: "This Build for TESTING",
       expire_previous_builds: true,
-      localized_app_info: {
-        "default": {
-          feedback_email: "%beta_app_feedback_email%",
-          description: "This Build for TESTING",
-        },
-      },%external_testing_config%
+      %external_testing_config%
     )
   end
 
