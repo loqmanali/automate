@@ -16,9 +16,7 @@ class AutomateScript {
 
   Future<void> run(List<String> arguments) async {
     if (arguments.isEmpty) {
-      throw Exception(
-        'Error: Mode (beta or update) must be provided.',
-      );
+      throw Exception('Error: Mode (beta or update) must be provided.');
     }
 
     final String firstArgument = arguments.first.toLowerCase().trim();
@@ -80,7 +78,7 @@ class AutomateScript {
 
     // Adding automate_config.json in gitignore
     if (File(Constants.gitignorePath).existsSync()) {
-      const formattedPath = '/automate/automate_config.json';
+      const formattedPath = '/lib/generated/automate_config.json';
       print('Adding $formattedPath to .gitignore...');
       // Read .gitignore file
       final gitignoreContent = File(Constants.gitignorePath).readAsStringSync();

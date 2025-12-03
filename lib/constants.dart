@@ -29,7 +29,7 @@ class Constants {
       '$androidFastlaneDirPath/Deliverfile';
 
   // Automate Config
-  static String get automateDirPath => '$_projectDir/automate';
+  static String get automateDirPath => '$_projectDir/lib/generated';
   static String get automateConfigFilePath =>
       '$automateDirPath/automate_config.json';
 }
