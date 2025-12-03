@@ -472,12 +472,6 @@ class AutomateScript {
   Future<void> _buildIOS() async {
     await _runCommand(
       'pod',
-      arguments: ['install', '--repo-update'],
-      description: 'Installing CocoaPods',
-      workingDir: 'ios',
-    );
-    await _runCommand(
-      'pod',
       arguments: ['update'],
       description: 'Updating CocoaPods',
       workingDir: 'ios',
