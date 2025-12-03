@@ -248,6 +248,73 @@ class AutomateScript {
       final enableExternalTesting =
           testflightConfig?['enable_external_testing'] as bool? ?? false;
 
+      // Build external testing config if enabled
+      String externalTestingConfig = '';
+      if (enableExternalTesting) {
+        // Validate required fields for external testing
+        final groups = testflightConfig?['groups']?.toString();
+        final betaAppFeedbackEmail =
+            testflightConfig?['beta_app_feedback_email']?.toString();
+        final betaAppReviewInfo =
+            testflightConfig?['beta_app_review_info'] as Map<String, dynamic>?;
+
+        if (groups?.isEmpty ?? true) {
+          throw Exception(
+            'Missing testflight.groups in automate_config.json (required for external testing)',
+          );
+        }
+
+        if (betaAppFeedbackEmail?.isEmpty ?? true) {
+          throw Exception(
+            'Missing testflight.beta_app_feedback_email in automate_config.json (required for external testing)',
+          );
+        }
+
+        if (betaAppReviewInfo == null) {
+          throw Exception(
+            'Missing testflight.beta_app_review_info in automate_config.json (required for external testing)',
+          );
+        }
+
+        // Validate beta_app_review_info required fields
+        final requiredReviewFields = [
+          'contact_email',
+          'contact_first_name',
+          'contact_last_name',
+          'contact_phone',
+          'demo_account_name',
+          'demo_account_password',
+        ];
+
+        for (final field in requiredReviewFields) {
+          final value = betaAppReviewInfo[field]?.toString();
+          if (value?.isEmpty ?? true) {
+            throw Exception(
+              'Missing testflight.beta_app_review_info.$field in automate_config.json (required for external testing)',
+            );
+          }
+        }
+
+        // Build the external testing configuration
+        final notes = betaAppReviewInfo['notes']?.toString() ?? '';
+        final buffer = StringBuffer();
+        buffer.writeln();
+        buffer.writeln('      groups: "$groups",');
+        buffer.writeln('      beta_app_feedback_email: "$betaAppFeedbackEmail",');
+        buffer.writeln('      beta_app_review_info: {');
+        buffer.writeln('        contact_email: "${betaAppReviewInfo['contact_email']}",');
+        buffer.writeln('        contact_first_name: "${betaAppReviewInfo['contact_first_name']}",');
+        buffer.writeln('        contact_last_name: "${betaAppReviewInfo['contact_last_name']}",');
+        buffer.writeln('        contact_phone: "${betaAppReviewInfo['contact_phone']}",');
+        buffer.writeln('        demo_account_name: "${betaAppReviewInfo['demo_account_name']}",');
+        buffer.writeln('        demo_account_password: "${betaAppReviewInfo['demo_account_password']}",');
+        if (notes.isNotEmpty) {
+          buffer.writeln('        notes: "$notes",');
+        }
+        buffer.write('      },');
+        externalTestingConfig = buffer.toString();
+      }
+
       // Define Fastlane configuration for iOS
       const fastlaneTemplate = Templates.iosFastFileContent;
 
@@ -271,7 +338,8 @@ class AutomateScript {
           .replaceAll(
             '%enable_external_testing%',
             enableExternalTesting.toString(),
-          );
+          )
+          .replaceAll('%external_testing_config%', externalTestingConfig);
 
       // Means That IPAs are already built and exists
       if (skipBuild) {
@@ -293,9 +361,9 @@ class AutomateScript {
 
   Future<void> _createAndroidFastfile() async {
     try {
-      print("Generating Fastfile from automate_config.yaml...");
+      print("Generating Fastfile from automate_config.json...");
 
-      // Extract android section from YAML
+      // Extract android section from config
       final androidConfig = _automateConfig.android;
 
       final jsonKeyPath = androidConfig['json_key_path']?.toString();

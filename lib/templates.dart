@@ -15,11 +15,22 @@ class Templates {
       "issuer_id": "(Required)",
       "key_filepath": "(Required)"
     },
-    "testflight": {
-      "enable_external_testing": false
-    },
     "changelog": {
       "en-US": ""
+    },
+    "testflight": {
+      "enable_external_testing": false,
+      "groups": "(Group Name)",
+      "beta_app_feedback_email": "(Required if external testing enabled)",
+      "beta_app_review_info": {
+        "contact_email": "(Required if external testing enabled)",
+        "contact_first_name": "(Required if external testing enabled)",
+        "contact_last_name": "(Required if external testing enabled)",
+        "contact_phone": "(Required if external testing enabled)",
+        "demo_account_name": "(Required if external testing enabled)",
+        "demo_account_password": "(Required if external testing enabled)",
+        "notes": ""
+      }
     }
   }
 }
@@ -58,9 +69,10 @@ platform :ios do
       ipa: "../build/ios/ipa/%display_name%.ipa",
       distribute_external: %enable_external_testing%,
       notify_external_testers: %enable_external_testing%,
-      beta_app_description: "TESTING",
+      beta_app_description: "This Build for TESTING",
+      changelog: "This Build for TESTING",
       expire_previous_builds: true,
-      groups: "Testers",
+      %external_testing_config%
     )
   end
 
@@ -93,7 +105,7 @@ end
 ''';
 
   static const String androidFastFileContent = '''
-  # This file contains the fastlane.tools configuration
+# This file contains the fastlane.tools configuration
 # You can find the documentation at https://docs.fastlane.tools
 #
 # For a list of all available actions, check out
@@ -122,5 +134,5 @@ platform :android do
   end
 end
 
-  ''';
+''';
 }
