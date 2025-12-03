@@ -72,13 +72,9 @@ class AutomateScript {
   Future<void> _init() async {
     print('Initializing Automate...');
 
-    // Create automate dir if it doesn't exist in project root
-    print('Creating ${Constants.automateDirPath}...');
-    _createNewDirectory(Constants.automateDirPath);
-
     // Adding automate_config.json in gitignore
     if (File(Constants.gitignorePath).existsSync()) {
-      const formattedPath = '/lib/generated/automate_config.json';
+      const formattedPath = '/automate_config.json';
       print('Adding $formattedPath to .gitignore...');
       // Read .gitignore file
       final gitignoreContent = File(Constants.gitignorePath).readAsStringSync();
@@ -101,14 +97,6 @@ class AutomateScript {
       Constants.automateConfigFilePath,
       content: Templates.automateConfigContent,
     );
-  }
-
-  void _createNewDirectory(String path) {
-    if (!Directory(path).existsSync()) {
-      Directory(path).createSync();
-    } else {
-      print('Directory ${Constants.automateDirPath} already exists.');
-    }
   }
 
   void _writeToFile(String path, {String? content}) {
@@ -278,7 +266,10 @@ class AutomateScript {
 
         // Validate demo account fields only if demo_account_required is true
         if (demoAccountRequired) {
-          final demoAccountFields = ['demo_account_name', 'demo_account_password'];
+          final demoAccountFields = [
+            'demo_account_name',
+            'demo_account_password',
+          ];
           for (final field in demoAccountFields) {
             final value = betaAppReviewInfo[field]?.toString();
             if (value?.isEmpty ?? true) {
@@ -310,9 +301,7 @@ class AutomateScript {
         buffer.writeln(
           '        contact_phone: "${betaAppReviewInfo['contact_phone']}",',
         );
-        buffer.writeln(
-          '        demo_account_required: $demoAccountRequired,',
-        );
+        buffer.writeln('        demo_account_required: $demoAccountRequired,');
         if (demoAccountRequired) {
           buffer.writeln(
             '        demo_account_name: "${betaAppReviewInfo['demo_account_name']}",',
