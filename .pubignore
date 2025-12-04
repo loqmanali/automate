@@ -1,0 +1,19 @@
+# Flutter project files (not needed for CLI package)
+android/
+ios/
+web/
+linux/
+macos/
+windows/
+test/
+
+# Build artifacts
+build/
+*.iml
+.idea/
+
+# Other unnecessary files
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.metadata
