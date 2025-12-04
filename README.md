@@ -34,9 +34,9 @@ Once your app exists on the stores, Automate takes care of everything else! It w
 ## Requirements
 
 - [Dart SDK](https://dart.dev/get-dart) ^3.7.2
-- [Fastlane](https://fastlane.tools/) installed
-- For iOS: App Store Connect API Key
-- For Android: Google Play Service Account JSON key
+- [Fastlane](https://docs.fastlane.tools) - [Installation Guide](https://docs.fastlane.tools)
+- For iOS: App Store Connect API Key - [How to create API Key](https://developer.apple.com/documentation/appstoreconnectapi/creating_api_keys_for_app_store_connect_api)
+- For Android: Google Play Service Account JSON key - [How to create Service Account](https://developers.google.com/android-publisher/getting_started#setting_up_api_access_clients)
 
 ## Installation
 
@@ -169,15 +169,36 @@ If you want to distribute to external testers, set `enable_external_testing` to 
 
 > **Note**: If `demo_account_required` is `false`, you don't need to provide `demo_account_name` and `demo_account_password`.
 
+### Localized Changelogs
+
+You can add multiple languages for your changelog. Just add more locale keys:
+
+```json
+{
+  "changelog": {
+    "en-US": "Bug fixes and improvements",
+    "ar-SA": "إصلاحات وتحسينات",
+    "fr-FR": "Corrections de bugs et améliorations",
+    "de-DE": "Fehlerbehebungen und Verbesserungen"
+  }
+}
+```
+
+The locale codes follow the format `language-REGION` (e.g., `en-US`, `ar-SA`, `fr-FR`). See [Apple's locale codes](https://developer.apple.com/documentation/xcode/choosing-localization-regions-and-scripts) and [Google Play's supported languages](https://support.google.com/googleplay/android-developer/answer/9844778#zippy=%2Chow-to-manage-translations%2Cview-list-of-available-languages).
+
 ### iOS Configuration
 
 - **key_id**: Your App Store Connect API Key ID
 - **issuer_id**: Your App Store Connect Issuer ID
 - **key_filepath**: Path to your `.p8` private key file
 
+> Learn how to create your API Key: [Apple Documentation](https://developer.apple.com/documentation/appstoreconnectapi/creating_api_keys_for_app_store_connect_api)
+
 ### Android Configuration
 
 - **json_key_path**: Path to your Google Play Service Account JSON key
+
+> Learn how to create your Service Account: [Google Play Documentation](https://developers.google.com/android-publisher/getting_started#setting_up_api_access_clients)
 
 ## Command Options
 

@@ -1,3 +1,9 @@
+## 1.0.1
+
+- Improved README documentation
+- Added localized changelogs example (ar-SA, fr-FR, de-DE)
+- Added documentation links for Fastlane, Apple API Key, and Google Service Account setup
+
 ## 1.0.0
 
 - Initial release
