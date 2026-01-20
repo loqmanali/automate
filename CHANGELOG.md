@@ -1,3 +1,8 @@
+## 1.0.2
+
+- Fixed `--skip-build` flag not replacing %display_name% placeholder in iOS Fastfile
+- Fixed skipBuild flag initialization timing issue
+
 ## 1.0.1
 
 - Improved README documentation

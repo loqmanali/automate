@@ -48,8 +48,6 @@ class AutomateScript {
     }
     if (['beta', 'update'].contains(firstArgument)) {
       mode = firstArgument.toAutomateMode();
-    } else if (args['skip-build'] ?? false) {
-      skipBuild = true;
     } else if (firstArgument == 'init') {
       await _init();
 
@@ -63,10 +61,11 @@ class AutomateScript {
     // load automate_config.json
     await _automateConfig.load();
 
-    await _initializeFastlane();
-
     skipBuild = args['skip-build'] ?? false;
     print("\nSkipping build process: $skipBuild\n");
+
+    await _initializeFastlane();
+
     await _executeBuildFlow();
   }
 
