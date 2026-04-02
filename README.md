@@ -45,11 +45,45 @@ Once your app exists on the stores, Automate takes care of everything else! It w
 
 ## Installation
 
+### Global install from pub.dev
+
 ```bash
 dart pub global activate automate
 ```
 
 After activation, use the `deploy` command.
+
+### Global install from GitHub
+
+```bash
+dart pub global activate -sgit https://github.com/abdullahzreqat/automate.git
+```
+
+If you were already using an older global install, run the activation command again so Dart regenerates the global shims for both `automate` and `deploy`.
+
+You can also pin a branch or tag:
+
+```bash
+dart pub global activate -sgit https://github.com/abdullahzreqat/automate.git --git-ref main
+```
+
+### Add as a dependency from GitHub
+
+If you want to use this package from `pubspec.yaml` instead of as a global CLI tool:
+
+```yaml
+dependencies:
+  automate:
+    git:
+      url: https://github.com/abdullahzreqat/automate.git
+      ref: main
+```
+
+Then run:
+
+```bash
+dart pub get
+```
 
 ## Quick Start
 
