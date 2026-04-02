@@ -3,6 +3,35 @@ import 'dart:io';
 import 'constants.dart';
 
 class Utils {
+  static String androidApkPath({String? flavor}) {
+    final normalizedFlavor = _normalizedFlavor(flavor);
+    if (normalizedFlavor == null) {
+      return Constants.buildAndroidApkPath;
+    }
+
+    return '${Constants.projectDir}/build/app/outputs/flutter-apk/app-$normalizedFlavor-release.apk';
+  }
+
+  static String androidAabPath({String? flavor}) {
+    final normalizedFlavor = _normalizedFlavor(flavor);
+    if (normalizedFlavor == null) {
+      return '${Constants.projectDir}/build/app/outputs/bundle/release/app-release.aab';
+    }
+
+    final buildVariant = '${normalizedFlavor}Release';
+    return '${Constants.projectDir}/build/app/outputs/bundle/$buildVariant/app-$normalizedFlavor-release.aab';
+  }
+
+  static String androidMappingPath({String? flavor}) {
+    final normalizedFlavor = _normalizedFlavor(flavor);
+    if (normalizedFlavor == null) {
+      return '${Constants.projectDir}/build/app/outputs/mapping/release/mapping.txt';
+    }
+
+    final buildVariant = '${normalizedFlavor}Release';
+    return '${Constants.projectDir}/build/app/outputs/mapping/$buildVariant/mapping.txt';
+  }
+
   static Future<String> get iosIpaName async {
     final Directory buildDir = Directory(Constants.buildIosIpaDirPath);
     if (!buildDir.existsSync()) {
@@ -118,5 +147,32 @@ class Utils {
     }
 
     return match.group(2)!;
+  }
+
+  static Future<String> get iosIpaPath async {
+    final Directory buildDir = Directory(Constants.buildIosIpaDirPath);
+    if (!buildDir.existsSync()) {
+      throw Exception(
+        'Build directory not found at ${Constants.buildIosIpaDirPath}',
+      );
+    }
+
+    final ipaFiles = buildDir.listSync().whereType<File>().where(
+      (file) => file.path.endsWith('.ipa'),
+    );
+
+    if (ipaFiles.isEmpty) {
+      throw Exception('No .ipa file found in build directory');
+    }
+
+    return ipaFiles.first.path;
+  }
+
+  static String? _normalizedFlavor(String? flavor) {
+    final value = flavor?.trim();
+    if (value == null || value.isEmpty) {
+      return null;
+    }
+    return value;
   }
 }

@@ -4,9 +4,13 @@ class Constants {
   Constants._();
   static final String _projectDir = Directory.current.path;
 
+  static String get projectDir => _projectDir;
+
   //.gitignore
   static String get gitignorePath => '$_projectDir/.gitignore';
   static String get buildIosIpaDirPath => '$_projectDir/build/ios/ipa';
+  static String get buildAndroidApkPath =>
+      '$_projectDir/build/app/outputs/flutter-apk/app-release.apk';
 
   // Directories
   static String get iosDirPath => '$_projectDir/ios';

@@ -7,6 +7,54 @@ class Templates {
     "json_key_path": "(Required)",
     "changelog": {
       "en-US": ""
+    },
+    "firebase_app_distribution": {
+      "app_id": "(Required for firebase provider)",
+      "groups": "",
+      "testers": "",
+      "release_notes": ""
+    }
+  },
+  "ios": {
+    "app_store_connect": {
+      "key_id": "(Required)",
+      "issuer_id": "(Required)",
+      "key_filepath": "(Required)"
+    },
+    "changelog": {
+      "en-US": ""
+    },
+    "testflight": {
+      "enable_external_testing": false,
+      "groups": "(Group Name)",
+      "beta_app_feedback_email": "(Required if external testing enabled)",
+      "beta_app_review_info": {
+        "contact_email": "(Required if external testing enabled)",
+        "contact_first_name": "(Required if external testing enabled)",
+        "contact_last_name": "(Required if external testing enabled)",
+        "contact_phone": "(Required if external testing enabled)",
+        "demo_account_required": false,
+        "demo_account_name": "(Required if demo_account_required is true)",
+        "demo_account_password": "(Required if demo_account_required is true)",
+        "notes": ""
+      }
+    },
+    "firebase_app_distribution": {
+      "app_id": "(Required for firebase provider)",
+      "groups": "",
+      "testers": "",
+      "release_notes": ""
+    }
+  }
+}
+''';
+
+  static const String automateConfigFastlaneContent = '''
+{
+  "android": {
+    "json_key_path": "(Required)",
+    "changelog": {
+      "en-US": ""
     }
   },
   "ios": {
@@ -35,6 +83,277 @@ class Templates {
     }
   }
 }
+''';
+
+  static const String automateConfigFirebaseContent = '''
+{
+  "android": {
+    "changelog": {
+      "en-US": ""
+    },
+    "firebase_app_distribution": {
+      "app_id": "(Required for firebase provider)",
+      "groups": "",
+      "testers": "",
+      "release_notes": ""
+    }
+  },
+  "ios": {
+    "changelog": {
+      "en-US": ""
+    },
+    "firebase_app_distribution": {
+      "app_id": "(Required for firebase provider)",
+      "groups": "",
+      "testers": "",
+      "release_notes": ""
+    }
+  }
+}
+''';
+
+  static String withFlavorConfig(String template) {
+    return template
+        .replaceFirst(
+          '{\n',
+          '{\n  "build": {\n    "flavor": "(Required for flavored builds, e.g. staging)",\n    "target": "lib/main_staging.dart"\n  },\n',
+        )
+        .replaceFirst(
+          '  "android": {\n',
+          '  "android": {\n    "package_name": "(Recommended for flavored builds, e.g. com.example.app.staging)",\n',
+        )
+        .replaceFirst(
+          '  "ios": {\n',
+          '  "ios": {\n    "app_identifier": "(Recommended for flavored builds, e.g. com.example.app.staging)",\n',
+        );
+  }
+
+  static String withProfilesConfig(
+    String template, {
+    required String templateKind,
+    required bool includeFlavorConfig,
+  }) {
+    final profilesBlock = _profilesBlock(
+      templateKind: templateKind,
+      includeFlavorConfig: includeFlavorConfig,
+    );
+    return template.replaceFirst(
+      '{'
+          '\n',
+      '{'
+          '\n$profilesBlock',
+    );
+  }
+
+  static String _profilesBlock({
+    required String templateKind,
+    required bool includeFlavorConfig,
+  }) {
+    switch (templateKind) {
+      case 'fastlane':
+        return includeFlavorConfig
+            ? _fastlaneFlavoredProfilesContent
+            : _fastlaneProfilesContent;
+      case 'firebase':
+        return includeFlavorConfig
+            ? _firebaseFlavoredProfilesContent
+            : _firebaseProfilesContent;
+      case 'both':
+      default:
+        return includeFlavorConfig
+            ? _combinedFlavoredProfilesContent
+            : _combinedProfilesContent;
+    }
+  }
+
+  static const String _combinedProfilesContent = '''
+  "profiles": {
+    "dev": {
+      "mode": "beta",
+      "provider": "firebase",
+      "platform": "all"
+    },
+    "staging": {
+      "mode": "beta",
+      "provider": "firebase",
+      "platform": "all"
+    },
+    "production": {
+      "mode": "update",
+      "provider": "fastlane",
+      "platform": "all"
+    }
+  },
+''';
+
+  static const String _combinedFlavoredProfilesContent = '''
+  "profiles": {
+    "dev": {
+      "mode": "beta",
+      "provider": "firebase",
+      "platform": "all",
+      "build": {
+        "flavor": "dev",
+        "target": "lib/main_dev.dart"
+      },
+      "android": {
+        "package_name": "com.example.app.dev"
+      },
+      "ios": {
+        "app_identifier": "com.example.app.dev"
+      }
+    },
+    "staging": {
+      "mode": "beta",
+      "provider": "firebase",
+      "platform": "all",
+      "build": {
+        "flavor": "staging",
+        "target": "lib/main_staging.dart"
+      },
+      "android": {
+        "package_name": "com.example.app.staging"
+      },
+      "ios": {
+        "app_identifier": "com.example.app.staging"
+      }
+    },
+    "production": {
+      "mode": "update",
+      "provider": "fastlane",
+      "platform": "all",
+      "build": {
+        "flavor": "production",
+        "target": "lib/main_production.dart"
+      },
+      "android": {
+        "package_name": "com.example.app"
+      },
+      "ios": {
+        "app_identifier": "com.example.app"
+      }
+    }
+  },
+''';
+
+  static const String _fastlaneProfilesContent = '''
+  "profiles": {
+    "dev": {
+      "mode": "beta",
+      "provider": "fastlane",
+      "platform": "ios"
+    },
+    "staging": {
+      "mode": "beta",
+      "provider": "fastlane",
+      "platform": "ios"
+    },
+    "production": {
+      "mode": "update",
+      "provider": "fastlane",
+      "platform": "all"
+    }
+  },
+''';
+
+  static const String _fastlaneFlavoredProfilesContent = '''
+  "profiles": {
+    "dev": {
+      "mode": "beta",
+      "provider": "fastlane",
+      "platform": "ios",
+      "build": {
+        "flavor": "dev",
+        "target": "lib/main_dev.dart"
+      },
+      "android": {
+        "package_name": "com.example.app.dev"
+      },
+      "ios": {
+        "app_identifier": "com.example.app.dev"
+      }
+    },
+    "staging": {
+      "mode": "beta",
+      "provider": "fastlane",
+      "platform": "ios",
+      "build": {
+        "flavor": "staging",
+        "target": "lib/main_staging.dart"
+      },
+      "android": {
+        "package_name": "com.example.app.staging"
+      },
+      "ios": {
+        "app_identifier": "com.example.app.staging"
+      }
+    },
+    "production": {
+      "mode": "update",
+      "provider": "fastlane",
+      "platform": "all",
+      "build": {
+        "flavor": "production",
+        "target": "lib/main_production.dart"
+      },
+      "android": {
+        "package_name": "com.example.app"
+      },
+      "ios": {
+        "app_identifier": "com.example.app"
+      }
+    }
+  },
+''';
+
+  static const String _firebaseProfilesContent = '''
+  "profiles": {
+    "dev": {
+      "mode": "beta",
+      "provider": "firebase",
+      "platform": "all"
+    },
+    "staging": {
+      "mode": "beta",
+      "provider": "firebase",
+      "platform": "all"
+    }
+  },
+''';
+
+  static const String _firebaseFlavoredProfilesContent = '''
+  "profiles": {
+    "dev": {
+      "mode": "beta",
+      "provider": "firebase",
+      "platform": "all",
+      "build": {
+        "flavor": "dev",
+        "target": "lib/main_dev.dart"
+      },
+      "android": {
+        "package_name": "com.example.app.dev"
+      },
+      "ios": {
+        "app_identifier": "com.example.app.dev"
+      }
+    },
+    "staging": {
+      "mode": "beta",
+      "provider": "firebase",
+      "platform": "all",
+      "build": {
+        "flavor": "staging",
+        "target": "lib/main_staging.dart"
+      },
+      "android": {
+        "package_name": "com.example.app.staging"
+      },
+      "ios": {
+        "app_identifier": "com.example.app.staging"
+      }
+    }
+  },
 ''';
 
   static const String iosFastFileContent = '''
@@ -67,6 +386,7 @@ platform :ios do
   desc "Upload New Build to Test Flight"
   lane :beta do
     pilot(
+      app_identifier: "%app_identifier%",
       ipa: "../build/ios/ipa/%display_name%.ipa",
       distribute_external: %enable_external_testing%,
       notify_external_testers: %enable_external_testing%,
@@ -80,6 +400,7 @@ platform :ios do
   desc "Update App With New Build On App Store Connect"
   lane :new_update do
     deliver(
+      app_identifier: "%app_identifier%",
       ipa: "../build/ios/ipa/%display_name%.ipa",
       skip_screenshots: true,
       precheck_include_in_app_purchases: false,
@@ -129,8 +450,8 @@ platform :android do
   supply(
     package_name: "%package_name%",
     json_key: "%json_key_path%",
-    aab: "../build/app/outputs/bundle/release/app-release.aab",
-    mapping: "../build/app/outputs/mapping/release/mapping.txt",
+    aab: "%aab_path%",
+    mapping: "%mapping_path%",
   )
   end
 end

@@ -1,5 +1,5 @@
 name: automate
-description: "A CLI tool to automate Flutter app deployment to TestFlight and Google Play Store using Fastlane."
+description: "A CLI tool to automate Flutter app deployment to TestFlight, Firebase App Distribution, and Google Play."
 version: 1.0.2
 repository: https://github.com/abdullahzreqat/automate
 
@@ -13,4 +13,5 @@ dev_dependencies:
   lints: ^5.1.0
 
 executables:
+  deploy: automate
   automate: automate
