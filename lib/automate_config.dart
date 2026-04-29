@@ -13,6 +13,9 @@ class AutomateConfig {
 
   Map<String, dynamic>? get build => _config['build'] as Map<String, dynamic>?;
 
+  bool get skipVersionIncrement =>
+      _config['skip_version_increment'] as bool? ?? false;
+
   String get buildFlavor => _optionalString(build?['flavor']) ?? '';
 
   String get buildTarget => _optionalString(build?['target']) ?? '';

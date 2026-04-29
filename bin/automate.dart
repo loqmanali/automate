@@ -30,31 +30,30 @@ class AutomateScript {
     final restArguments = arguments.skip(1).toList();
     // optional named args
 
-    final parser =
-        ArgParser()
-          ..addOption(
-            'platform',
-            allowed: ['ios', 'android'],
-            help: 'Target platform',
-            abbr: 'p',
-          )
-          ..addOption(
-            'provider',
-            allowed: ['fastlane', 'firebase'],
-            help: 'Deployment provider',
-            abbr: 'r',
-          )
-          ..addOption(
-            'flavor',
-            help: 'Flutter flavor / Xcode scheme / Android product flavor',
-            abbr: 'f',
-          )
-          ..addOption(
-            'target',
-            help: 'Flutter target file, for example lib/main_staging.dart',
-            abbr: 't',
-          )
-          ..addFlag("skip-build", abbr: "s", help: "Skip build process");
+    final parser = ArgParser()
+      ..addOption(
+        'platform',
+        allowed: ['ios', 'android'],
+        help: 'Target platform',
+        abbr: 'p',
+      )
+      ..addOption(
+        'provider',
+        allowed: ['fastlane', 'firebase'],
+        help: 'Deployment provider',
+        abbr: 'r',
+      )
+      ..addOption(
+        'flavor',
+        help: 'Flutter flavor / Xcode scheme / Android product flavor',
+        abbr: 'f',
+      )
+      ..addOption(
+        'target',
+        help: 'Flutter target file, for example lib/main_staging.dart',
+        abbr: 't',
+      )
+      ..addFlag("skip-build", abbr: "s", help: "Skip build process");
 
     final ArgResults args;
 
@@ -270,10 +269,9 @@ class AutomateScript {
     final profile = _automateConfig.profile(profileName);
     if (profile == null) {
       final availableProfiles = _automateConfig.profileNames;
-      final profileHint =
-          availableProfiles.isEmpty
-              ? 'No profiles are configured yet. Run deploy init to generate them.'
-              : 'Available profiles: ${availableProfiles.join(', ')}.';
+      final profileHint = availableProfiles.isEmpty
+          ? 'No profiles are configured yet. Run deploy init to generate them.'
+          : 'Available profiles: ${availableProfiles.join(', ')}.';
       throw Exception(
         'Unknown deployment profile "$profileName". $profileHint',
       );
@@ -805,8 +803,9 @@ class AutomateScript {
 
     await _cleanupLegacyFlutterAndroidArtifacts();
 
-    // Increment version only if not android beta
-    if (!(platform == AutomatePlatform.android && mode == AutomateMode.beta)) {
+    // Increment version only if not android beta and skip_version_increment is false
+    if (!(platform == AutomatePlatform.android && mode == AutomateMode.beta) &&
+        !_automateConfig.skipVersionIncrement) {
       await PubspecUtils.incrementVersion();
     }
 
@@ -1238,8 +1237,9 @@ class AutomateScript {
       final process = await Process.start(
         executable,
         arguments,
-        workingDirectory:
-            workingDir != null ? '$_projectDir/$workingDir' : _projectDir,
+        workingDirectory: workingDir != null
+            ? '$_projectDir/$workingDir'
+            : _projectDir,
         runInShell: true,
       );
       // Listen to stdout
